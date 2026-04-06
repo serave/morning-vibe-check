@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import RecoveryScore, { calcRecoveryScore } from "@/components/RecoveryScore";
 import { format } from "date-fns";
 
 const History = () => {
@@ -15,7 +14,7 @@ const History = () => {
       .from("checkins")
       .select("*")
       .eq("user_id", user.id)
-      .order("checkin_date", { ascending: false })
+      .order("entry_date", { ascending: false })
       .limit(30)
       .then(({ data }) => {
         setCheckins(data ?? []);
@@ -44,18 +43,13 @@ const History = () => {
             <div key={c.id} className="flex items-center justify-between rounded-lg bg-card p-4">
               <div>
                 <p className="text-sm font-medium text-foreground">
-                  {format(new Date(c.checkin_date + "T00:00:00"), "EEE, MMM d")}
+                  {format(new Date(c.entry_date + "T00:00:00"), "EEE, MMM d")}
                 </p>
                 <p className="text-xs text-muted-foreground">{c.sleep_hours}h sleep</p>
               </div>
-              <RecoveryScore
-                sleepQuality={c.sleep_quality}
-                energyLevel={c.energy_level}
-                mood={c.mood}
-                muscleSoreness={c.muscle_soreness}
-                hydration={c.hydration}
-                size="sm"
-              />
+              {c.recovery_score != null && (
+                <span className="text-lg font-bold text-primary">{Math.round(c.recovery_score)}</span>
+              )}
             </div>
           ))}
         </div>
