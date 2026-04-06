@@ -24,7 +24,7 @@ const ScoreSlider = ({ label, value, onChange, emoji, lowLabel = "Low", highLabe
         {emoji && <span className="mr-2">{emoji}</span>}
         {label}
       </span>
-      <span className={cn("text-lg font-bold tabular-nums", getColor(value))}>{value}</span>
+      <span className="text-lg">{getRatingEmoji(value)}</span>
     </div>
     <input
       type="range"
