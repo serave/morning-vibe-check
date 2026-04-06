@@ -9,11 +9,12 @@ interface ScoreSliderProps {
   highLabel?: string;
 }
 
-const getColor = (value: number) => {
-  if (value <= 3) return "text-destructive";
-  if (value <= 5) return "text-warning";
-  if (value <= 7) return "text-foreground";
-  return "text-success";
+const getRatingEmoji = (value: number) => {
+  if (value <= 2) return "🤢";
+  if (value <= 4) return "👎";
+  if (value <= 6) return "👌";
+  if (value <= 8) return "👍";
+  return "🎉";
 };
 
 const ScoreSlider = ({ label, value, onChange, emoji, lowLabel = "Low", highLabel = "High" }: ScoreSliderProps) => (
@@ -23,7 +24,7 @@ const ScoreSlider = ({ label, value, onChange, emoji, lowLabel = "Low", highLabe
         {emoji && <span className="mr-2">{emoji}</span>}
         {label}
       </span>
-      <span className={cn("text-lg font-bold tabular-nums", getColor(value))}>{value}</span>
+      <span className="text-lg">{getRatingEmoji(value)}</span>
     </div>
     <input
       type="range"
