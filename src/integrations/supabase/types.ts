@@ -14,75 +14,178 @@ export type Database = {
   }
   public: {
     Tables: {
-      checkins: {
+      baseline_cache: {
         Row: {
-          checkin_date: string
-          created_at: string
-          energy_level: number
-          hydration: number
-          id: string
-          mood: number
-          muscle_soreness: number
-          notes: string | null
-          sleep_hours: number
-          sleep_quality: number
-          updated_at: string
+          baseline_phase: string | null
+          computed_at: string | null
+          consecutive_streak: number | null
+          hrv_10d_mean_ln: number | null
+          hrv_60d_mean_ln: number | null
+          hrv_60d_std_ln: number | null
+          hrv_7d_mean_ln: number | null
+          sleep_30d_mean: number | null
+          sleep_30d_std: number | null
+          total_entries: number | null
           user_id: string
         }
         Insert: {
-          checkin_date?: string
-          created_at?: string
-          energy_level: number
-          hydration: number
-          id?: string
-          mood: number
-          muscle_soreness: number
-          notes?: string | null
-          sleep_hours: number
-          sleep_quality: number
-          updated_at?: string
+          baseline_phase?: string | null
+          computed_at?: string | null
+          consecutive_streak?: number | null
+          hrv_10d_mean_ln?: number | null
+          hrv_60d_mean_ln?: number | null
+          hrv_60d_std_ln?: number | null
+          hrv_7d_mean_ln?: number | null
+          sleep_30d_mean?: number | null
+          sleep_30d_std?: number | null
+          total_entries?: number | null
           user_id: string
         }
         Update: {
-          checkin_date?: string
-          created_at?: string
-          energy_level?: number
-          hydration?: number
-          id?: string
-          mood?: number
-          muscle_soreness?: number
-          notes?: string | null
-          sleep_hours?: number
-          sleep_quality?: number
-          updated_at?: string
+          baseline_phase?: string | null
+          computed_at?: string | null
+          consecutive_streak?: number | null
+          hrv_10d_mean_ln?: number | null
+          hrv_60d_mean_ln?: number | null
+          hrv_60d_std_ln?: number | null
+          hrv_7d_mean_ln?: number | null
+          sleep_30d_mean?: number | null
+          sleep_30d_std?: number | null
+          total_entries?: number | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "baseline_cache_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checkins: {
+        Row: {
+          baseline_phase: string | null
+          created_at: string | null
+          entry_date: string
+          feeling: number | null
+          hrv_rmssd: number | null
+          hrv_score: number | null
+          hrv_weight_applied: number | null
+          id: string
+          is_backdated: boolean | null
+          lowest_factor: string | null
+          recovery_score: number | null
+          sleep_hours: number | null
+          sleep_score: number | null
+          soreness: number | null
+          soreness_score: number | null
+          source_hrv: string | null
+          source_sleep: string | null
+          sport: string | null
+          trained_yesterday: boolean | null
+          training_duration_min: number | null
+          training_intensity: number | null
+          training_recommendation: string | null
+          updated_at: string | null
+          user_id: string | null
+          wellbeing_score: number | null
+        }
+        Insert: {
+          baseline_phase?: string | null
+          created_at?: string | null
+          entry_date: string
+          feeling?: number | null
+          hrv_rmssd?: number | null
+          hrv_score?: number | null
+          hrv_weight_applied?: number | null
+          id?: string
+          is_backdated?: boolean | null
+          lowest_factor?: string | null
+          recovery_score?: number | null
+          sleep_hours?: number | null
+          sleep_score?: number | null
+          soreness?: number | null
+          soreness_score?: number | null
+          source_hrv?: string | null
+          source_sleep?: string | null
+          sport?: string | null
+          trained_yesterday?: boolean | null
+          training_duration_min?: number | null
+          training_intensity?: number | null
+          training_recommendation?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          wellbeing_score?: number | null
+        }
+        Update: {
+          baseline_phase?: string | null
+          created_at?: string | null
+          entry_date?: string
+          feeling?: number | null
+          hrv_rmssd?: number | null
+          hrv_score?: number | null
+          hrv_weight_applied?: number | null
+          id?: string
+          is_backdated?: boolean | null
+          lowest_factor?: string | null
+          recovery_score?: number | null
+          sleep_hours?: number | null
+          sleep_score?: number | null
+          soreness?: number | null
+          soreness_score?: number | null
+          source_hrv?: string | null
+          source_sleep?: string | null
+          sport?: string | null
+          trained_yesterday?: boolean | null
+          training_duration_min?: number | null
+          training_intensity?: number | null
+          training_recommendation?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          wellbeing_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
-          created_at: string
-          first_name: string
+          created_at: string | null
+          first_name: string | null
           id: string
-          last_name: string
-          updated_at: string
-          user_id: string
+          last_name: string | null
+          longest_streak: number | null
+          sport_type: string | null
+          streak_count: number | null
+          timezone: string | null
         }
         Insert: {
-          created_at?: string
-          first_name: string
-          id?: string
-          last_name: string
-          updated_at?: string
-          user_id: string
+          created_at?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          longest_streak?: number | null
+          sport_type?: string | null
+          streak_count?: number | null
+          timezone?: string | null
         }
         Update: {
-          created_at?: string
-          first_name?: string
+          created_at?: string | null
+          first_name?: string | null
           id?: string
-          last_name?: string
-          updated_at?: string
-          user_id?: string
+          last_name?: string | null
+          longest_streak?: number | null
+          sport_type?: string | null
+          streak_count?: number | null
+          timezone?: string | null
         }
         Relationships: []
       }
