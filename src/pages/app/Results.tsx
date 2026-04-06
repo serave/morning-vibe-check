@@ -1,20 +1,17 @@
-import RecoveryScore from "@/components/RecoveryScore";
 import { format } from "date-fns";
 
 interface ResultsProps {
   checkin: {
-    checkin_date: string;
+    entry_date: string;
     sleep_hours: number;
-    sleep_quality: number;
-    muscle_soreness: number;
-    energy_level: number;
-    mood: number;
-    hydration: number;
+    soreness: number | null;
+    feeling: number | null;
+    recovery_score: number | null;
     notes: string | null;
   };
 }
 
-const MetricRow = ({ label, value, max = 10 }: { label: string; value: number; max?: number }) => (
+const MetricRow = ({ label, value, max = 5 }: { label: string; value: number; max?: number }) => (
   <div className="flex items-center justify-between py-2">
     <span className="text-sm text-muted-foreground">{label}</span>
     <div className="flex items-center gap-2">
@@ -29,28 +26,24 @@ const MetricRow = ({ label, value, max = 10 }: { label: string; value: number; m
 const Results = ({ checkin }: ResultsProps) => (
   <div className="animate-slide-up px-4 py-6">
     <div className="mb-6 text-center">
-      <p className="text-sm text-muted-foreground">{format(new Date(checkin.checkin_date + "T00:00:00"), "EEEE, MMMM d")}</p>
+      <p className="text-sm text-muted-foreground">{format(new Date(checkin.entry_date + "T00:00:00"), "EEEE, MMMM d")}</p>
       <h1 className="mt-1 text-xl font-bold text-foreground">Today's Check-In</h1>
     </div>
 
-    <div className="mb-6 flex justify-center rounded-lg bg-card p-6">
-      <RecoveryScore
-        sleepQuality={checkin.sleep_quality}
-        energyLevel={checkin.energy_level}
-        mood={checkin.mood}
-        muscleSoreness={checkin.muscle_soreness}
-        hydration={checkin.hydration}
-      />
-    </div>
+    {checkin.recovery_score != null && (
+      <div className="mb-6 flex justify-center rounded-lg bg-card p-6">
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-5xl font-bold tabular-nums text-primary">{Math.round(checkin.recovery_score)}</span>
+          <span className="text-xs text-muted-foreground">Recovery Score</span>
+        </div>
+      </div>
+    )}
 
     <div className="rounded-lg bg-card p-4">
       <h2 className="mb-2 text-sm font-semibold text-foreground">Metrics</h2>
       <MetricRow label="😴 Sleep Hours" value={checkin.sleep_hours} max={12} />
-      <MetricRow label="🛏️ Sleep Quality" value={checkin.sleep_quality} />
-      <MetricRow label="💪 Soreness" value={checkin.muscle_soreness} />
-      <MetricRow label="⚡ Energy" value={checkin.energy_level} />
-      <MetricRow label="😊 Mood" value={checkin.mood} />
-      <MetricRow label="💧 Hydration" value={checkin.hydration} />
+      {checkin.soreness != null && <MetricRow label="💪 Soreness" value={checkin.soreness} />}
+      {checkin.feeling != null && <MetricRow label="😊 Feeling" value={checkin.feeling} />}
     </div>
 
     {checkin.notes && (

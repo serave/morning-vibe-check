@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { calcRecoveryScore } from "@/components/RecoveryScore";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { format } from "date-fns";
 
@@ -16,17 +15,15 @@ const Trends = () => {
       .from("checkins")
       .select("*")
       .eq("user_id", user.id)
-      .order("checkin_date", { ascending: true })
+      .order("entry_date", { ascending: true })
       .limit(30)
       .then(({ data: rows }) => {
         const mapped = (rows ?? []).map((r) => ({
-          date: format(new Date(r.checkin_date + "T00:00:00"), "M/d"),
-          score: calcRecoveryScore(r),
-          sleep: r.sleep_quality,
-          energy: r.energy_level,
-          mood: r.mood,
-          soreness: r.muscle_soreness,
-          hydration: r.hydration,
+          date: format(new Date(r.entry_date + "T00:00:00"), "M/d"),
+          recovery: r.recovery_score ?? 0,
+          soreness: r.soreness,
+          feeling: r.feeling,
+          sleep: r.sleep_hours,
         }));
         setData(mapped);
         setLoading(false);
@@ -64,7 +61,7 @@ const Trends = () => {
             <XAxis dataKey="date" tick={{ fill: "#888", fontSize: 11 }} />
             <YAxis domain={[0, 100]} tick={{ fill: "#888", fontSize: 11 }} />
             <Tooltip contentStyle={{ background: "#1A1D2E", border: "1px solid #2a2d3e", borderRadius: 8, color: "#f0f0f0" }} />
-            <Line type="monotone" dataKey="score" stroke="#3F8BFF" strokeWidth={2} dot={{ r: 3, fill: "#3F8BFF" }} />
+            <Line type="monotone" dataKey="recovery" stroke="#3F8BFF" strokeWidth={2} dot={{ r: 3, fill: "#3F8BFF" }} name="Recovery" />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -75,13 +72,11 @@ const Trends = () => {
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(231, 25%, 22%)" />
             <XAxis dataKey="date" tick={{ fill: "#888", fontSize: 11 }} />
-            <YAxis domain={[1, 10]} tick={{ fill: "#888", fontSize: 11 }} />
+            <YAxis domain={[0, 5]} tick={{ fill: "#888", fontSize: 11 }} />
             <Tooltip contentStyle={{ background: "#1A1D2E", border: "1px solid #2a2d3e", borderRadius: 8, color: "#f0f0f0" }} />
-            <Line type="monotone" dataKey="sleep" stroke="#3F8BFF" strokeWidth={1.5} dot={false} name="Sleep" />
-            <Line type="monotone" dataKey="energy" stroke="#34D399" strokeWidth={1.5} dot={false} name="Energy" />
-            <Line type="monotone" dataKey="mood" stroke="#FBBF24" strokeWidth={1.5} dot={false} name="Mood" />
+            <Line type="monotone" dataKey="feeling" stroke="#34D399" strokeWidth={1.5} dot={false} name="Feeling" />
             <Line type="monotone" dataKey="soreness" stroke="#F87171" strokeWidth={1.5} dot={false} name="Soreness" />
-            <Line type="monotone" dataKey="hydration" stroke="#60A5FA" strokeWidth={1.5} dot={false} name="Hydration" />
+            <Line type="monotone" dataKey="sleep" stroke="#3F8BFF" strokeWidth={1.5} dot={false} name="Sleep hrs" />
           </LineChart>
         </ResponsiveContainer>
       </div>
