@@ -19,7 +19,7 @@ const AppSettings = () => {
     supabase
       .from("profiles")
       .select("first_name, last_name")
-      .eq("user_id", user.id)
+      .eq("id", user.id)
       .single()
       .then(({ data }) => {
         if (data) {
@@ -35,7 +35,7 @@ const AppSettings = () => {
     const { error } = await supabase
       .from("profiles")
       .update({ first_name: firstName, last_name: lastName })
-      .eq("user_id", user.id);
+      .eq("id", user.id);
     setSaving(false);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });

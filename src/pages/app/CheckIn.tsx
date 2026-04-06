@@ -14,12 +14,8 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [sleepHours, setSleepHours] = useState(7);
-  const [sleepQuality, setSleepQuality] = useState(5);
-  const [muscleSoreness, setMuscleSoreness] = useState(5);
-  const [energyLevel, setEnergyLevel] = useState(5);
-  const [mood, setMood] = useState(5);
-  const [hydration, setHydration] = useState(5);
-  const [notes, setNotes] = useState("");
+  const [soreness, setSoreness] = useState(3);
+  const [feeling, setFeeling] = useState(3);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -27,13 +23,10 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
     setLoading(true);
     const { error } = await supabase.from("checkins").insert({
       user_id: user.id,
+      entry_date: new Date().toISOString().split("T")[0],
       sleep_hours: sleepHours,
-      sleep_quality: sleepQuality,
-      muscle_soreness: muscleSoreness,
-      energy_level: energyLevel,
-      mood,
-      hydration,
-      notes: notes.trim() || null,
+      soreness,
+      feeling,
     });
     setLoading(false);
     if (error) {
@@ -73,21 +66,8 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
           </div>
         </div>
 
-        <ScoreSlider label="Sleep Quality" emoji="🛏️" value={sleepQuality} onChange={setSleepQuality} lowLabel="Terrible" highLabel="Amazing" />
-        <ScoreSlider label="Muscle Soreness" emoji="💪" value={muscleSoreness} onChange={setMuscleSoreness} lowLabel="None" highLabel="Very sore" />
-        <ScoreSlider label="Energy Level" emoji="⚡" value={energyLevel} onChange={setEnergyLevel} lowLabel="Drained" highLabel="Energized" />
-        <ScoreSlider label="Mood" emoji="😊" value={mood} onChange={setMood} lowLabel="Low" highLabel="Great" />
-        <ScoreSlider label="Hydration" emoji="💧" value={hydration} onChange={setHydration} lowLabel="Dehydrated" highLabel="Well-hydrated" />
-
-        <div className="rounded-lg bg-card p-4">
-          <label className="mb-2 block text-sm font-medium text-foreground">📝 Notes (optional)</label>
-          <Textarea
-            placeholder="Anything to note? Injuries, travel, stress…"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="min-h-[80px] rounded-sm border-border bg-secondary"
-          />
-        </div>
+        <ScoreSlider label="Soreness" emoji="💪" value={soreness} onChange={setSoreness} lowLabel="None" highLabel="Very sore" min={1} max={5} />
+        <ScoreSlider label="Feeling" emoji="😊" value={feeling} onChange={setFeeling} lowLabel="Terrible" highLabel="Great" min={1} max={5} />
 
         <Button onClick={handleSubmit} disabled={loading} className="mt-2 h-14 w-full rounded-sm text-base font-semibold">
           {loading ? "Saving…" : "Submit Check-In"}

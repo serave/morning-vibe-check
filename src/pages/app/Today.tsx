@@ -17,7 +17,7 @@ const Today = () => {
       .from("checkins")
       .select("*")
       .eq("user_id", user.id)
-      .eq("checkin_date", today)
+      .eq("entry_date", today)
       .maybeSingle();
     setTodayCheckin(data);
     setLoading(false);
