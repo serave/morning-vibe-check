@@ -7,29 +7,32 @@ interface ScoreSliderProps {
   emoji?: string;
   lowLabel?: string;
   highLabel?: string;
+  min?: number;
+  max?: number;
 }
 
-const getRatingEmoji = (value: number) => {
-  if (value <= 2) return "🤢";
-  if (value <= 4) return "👎";
-  if (value <= 6) return "👌";
-  if (value <= 8) return "👍";
+const getRatingEmoji = (value: number, min: number = 1, max: number = 10) => {
+  const pct = (value - min) / (max - min);
+  if (pct <= 0.2) return "🤢";
+  if (pct <= 0.4) return "👎";
+  if (pct <= 0.6) return "👌";
+  if (pct <= 0.8) return "👍";
   return "🎉";
 };
 
-const ScoreSlider = ({ label, value, onChange, emoji, lowLabel = "Low", highLabel = "High" }: ScoreSliderProps) => (
+const ScoreSlider = ({ label, value, onChange, emoji, lowLabel = "Low", highLabel = "High", min = 1, max = 10 }: ScoreSliderProps) => (
   <div className="rounded-lg bg-card p-4">
     <div className="mb-3 flex items-center justify-between">
       <span className="text-sm font-medium text-foreground">
         {emoji && <span className="mr-2">{emoji}</span>}
         {label}
       </span>
-      <span className="text-lg">{getRatingEmoji(value)}</span>
+      <span className="text-lg">{getRatingEmoji(value, min, max)}</span>
     </div>
     <input
       type="range"
-      min={1}
-      max={10}
+      min={min}
+      max={max}
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
       className="w-full accent-primary"
