@@ -186,7 +186,7 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
           )}
         </div>
 
-        <Button onClick={handleSubmit} disabled={loading} className="mt-2 h-14 w-full rounded-sm text-base font-semibold">
+        <Button onClick={handleSubmit} disabled={isSubmitDisabled} className="mt-2 h-14 w-full rounded-sm text-base font-semibold">
           {loading ? "Saving…" : "Submit Check-In"}
         </Button>
       </div>
