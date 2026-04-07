@@ -56,6 +56,14 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
 
   return (
     <div className="animate-slide-up px-4 py-6">
+      <style>{`
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+      `}</style>
       <div className="mb-6">
         <h1 className="text-xl font-bold text-foreground">Good Morning 🌅</h1>
         <p className="text-sm text-muted-foreground">How are you feeling today?</p>
