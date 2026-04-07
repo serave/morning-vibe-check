@@ -89,7 +89,7 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
           </p>
           {showHrvWarning && (
             <p className="mt-2 text-xs text-warning">
-              ⚠️ Unusual value — typical RMSSD is 20–100 ms. Double-check your device.
+              ⚠️ Typical RMSSD is between 10–200 ms. Double-check your device.
             </p>
           )}
         </div>
