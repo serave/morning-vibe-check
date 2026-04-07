@@ -19,6 +19,8 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
   const [sleepHours, setSleepHours] = useState(7);
   const [soreness, setSoreness] = useState(3);
   const [feeling, setFeeling] = useState(3);
+  const [sorenessSet, setSorenessSet] = useState(false);
+  const [feelingSet, setFeelingSet] = useState(false);
   const [trainedYesterday, setTrainedYesterday] = useState(false);
   const [sport, setSport] = useState("");
   const [trainingIntensity, setTrainingIntensity] = useState(5);
@@ -26,7 +28,8 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
   const [loading, setLoading] = useState(false);
 
   const hrvValue = hrvRmssd ? Number(hrvRmssd) : null;
-  const showHrvWarning = hrvValue !== null && (hrvValue < 15 || hrvValue > 200);
+  const showHrvWarning = hrvRmssd !== "" && hrvValue !== null && (hrvValue < 10 || hrvValue > 200);
+  const isSubmitDisabled = loading || !hrvValue || hrvValue <= 0 || !sorenessSet || !feelingSet;
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -53,6 +56,14 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
 
   return (
     <div className="animate-slide-up px-4 py-6">
+      <style>{`
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+      `}</style>
       <div className="mb-6">
         <h1 className="text-xl font-bold text-foreground">Good Morning 🌅</h1>
         <p className="text-sm text-muted-foreground">How are you feeling today?</p>
@@ -78,7 +89,7 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
           </p>
           {showHrvWarning && (
             <p className="mt-2 text-xs text-warning">
-              ⚠️ Unusual value — typical RMSSD is 20–100 ms. Double-check your device.
+              ⚠️ Typical RMSSD is between 10–200 ms. Double-check your device.
             </p>
           )}
         </div>
@@ -105,8 +116,8 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
           </div>
         </div>
 
-        <ScoreSlider label="Soreness" emoji="💪" value={soreness} onChange={setSoreness} lowLabel="None" highLabel="Extreme" min={1} max={5} />
-        <ScoreSlider label="Feeling" emoji="😊" value={feeling} onChange={setFeeling} lowLabel="Terrible" highLabel="Great" min={1} max={5} />
+        <ScoreSlider label="Soreness" emoji="💪" value={soreness} onChange={(v) => { setSoreness(v); setSorenessSet(true); }} lowLabel="None" highLabel="Extreme" min={1} max={5} />
+        <ScoreSlider label="Feeling" emoji="😊" value={feeling} onChange={(v) => { setFeeling(v); setFeelingSet(true); }} lowLabel="Terrible" highLabel="Great" min={1} max={5} />
 
         {/* Yesterday's Training */}
         <div className="rounded-lg bg-card p-4">
@@ -175,7 +186,7 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
           )}
         </div>
 
-        <Button onClick={handleSubmit} disabled={loading} className="mt-2 h-14 w-full rounded-sm text-base font-semibold">
+        <Button onClick={handleSubmit} disabled={isSubmitDisabled} className="mt-2 h-14 w-full rounded-sm text-base font-semibold">
           {loading ? "Saving…" : "Submit Check-In"}
         </Button>
       </div>
