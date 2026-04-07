@@ -19,6 +19,8 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
   const [sleepHours, setSleepHours] = useState(7);
   const [soreness, setSoreness] = useState(3);
   const [feeling, setFeeling] = useState(3);
+  const [sorenessSet, setSorenessSet] = useState(false);
+  const [feelingSet, setFeelingSet] = useState(false);
   const [trainedYesterday, setTrainedYesterday] = useState(false);
   const [sport, setSport] = useState("");
   const [trainingIntensity, setTrainingIntensity] = useState(5);
@@ -26,7 +28,8 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
   const [loading, setLoading] = useState(false);
 
   const hrvValue = hrvRmssd ? Number(hrvRmssd) : null;
-  const showHrvWarning = hrvValue !== null && (hrvValue < 15 || hrvValue > 200);
+  const showHrvWarning = hrvRmssd !== "" && hrvValue !== null && (hrvValue < 10 || hrvValue > 200);
+  const isSubmitDisabled = loading || !hrvValue || hrvValue <= 0 || !sorenessSet || !feelingSet;
 
   const handleSubmit = async () => {
     if (!user) return;
