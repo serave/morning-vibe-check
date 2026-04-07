@@ -1,32 +1,20 @@
 
 
-## Plan: New Database Schema Migration
+## Three fixes to CheckIn.tsx
 
-### What changes
-A single new migration that drops the existing `checkins` and `profiles` tables and recreates them with your new schema, plus adds a new `baseline_cache` table.
+### 1. HRV warning — show only after typing, new thresholds & message
+- Change warning condition: show when `hrvRmssd !== ""` (user has typed) AND value is `< 10` or `> 200`
+- Update message text to: "⚠️ Typical RMSSD is between 10–200 ms. Double-check your device."
 
-### Key differences from current schema
-- `profiles.id` becomes the primary key referencing `auth.users(id)` directly (no separate `user_id` column)
-- `profiles` gains `timezone`, `sport_type`, `streak_count`, `longest_streak` columns; drops `updated_at`
-- `checkins` is completely redesigned with HRV, feeling, training fields, scoring columns, and metadata
-- New `baseline_cache` table for computed baselines
-- RLS uses single `FOR ALL` policies instead of per-operation policies
-- `handle_new_user()` updated to match new `profiles` schema (inserts into `id` column directly)
+### 2. Hide number input spinners
+- Add a `<style>` block (via inline JSX) at the top of the returned JSX to hide webkit spinner arrows and set `-moz-appearance: textfield` for all `input[type=number]` within the component. This avoids touching any other file.
 
-### Migration SQL summary
-1. Drop existing triggers on `profiles` and `checkins`
-2. Drop trigger `on_auth_user_created` on `auth.users`
-3. Drop existing RLS policies on both tables
-4. Drop `checkins` then `profiles` (order matters due to no FK dependency currently, but safe)
-5. Create new `profiles`, `checkins`, `baseline_cache` tables with your exact schema
-6. Enable RLS on all three tables
-7. Create `FOR ALL` policies
-8. Replace `handle_new_user()` function and recreate the auth trigger
-9. Add `updated_at` trigger on `checkins`
+### 3. Disable submit until HRV > 0, soreness touched, feeling touched
+- Add two new state booleans: `sorenessSet` (default `false`) and `feelingSet` (default `false`)
+- Wrap `setSoreness` and `setFeeling` callbacks so they also flip the corresponding boolean to `true` on first interaction
+- Disable the submit button when: `loading || !hrvValue || hrvValue <= 0 || !sorenessSet || !feelingSet`
 
-### Technical note
-The CHECK constraints (`soreness between 1 and 5`, etc.) are simple range validations and will be kept as-is since they are immutable expressions (no time-based logic).
-
-### Files changed
-- New migration SQL file only — no React components touched
+### Files modified
+- `src/pages/app/CheckIn.tsx` — all three changes above
+- No other files touched
 
