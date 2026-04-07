@@ -116,8 +116,8 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
           </div>
         </div>
 
-        <ScoreSlider label="Soreness" emoji="💪" value={soreness} onChange={setSoreness} lowLabel="None" highLabel="Extreme" min={1} max={5} />
-        <ScoreSlider label="Feeling" emoji="😊" value={feeling} onChange={setFeeling} lowLabel="Terrible" highLabel="Great" min={1} max={5} />
+        <ScoreSlider label="Soreness" emoji="💪" value={soreness} onChange={(v) => { setSoreness(v); setSorenessSet(true); }} lowLabel="None" highLabel="Extreme" min={1} max={5} />
+        <ScoreSlider label="Feeling" emoji="😊" value={feeling} onChange={(v) => { setFeeling(v); setFeelingSet(true); }} lowLabel="Terrible" highLabel="Great" min={1} max={5} />
 
         {/* Yesterday's Training */}
         <div className="rounded-lg bg-card p-4">
