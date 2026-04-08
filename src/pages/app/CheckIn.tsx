@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import ScoreSlider from "@/components/ScoreSlider";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronDown } from "lucide-react";
+import { calculateRecovery } from "@/lib/api";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface CheckInProps {
@@ -46,11 +48,19 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
       training_intensity: trainedYesterday ? trainingIntensity : null,
       training_duration_min: trainedYesterday && trainingDuration ? Number(trainingDuration) : null,
     });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
+      return;
+    }
+    try {
+      await calculateRecovery(user.id, format(new Date(), "yyyy-MM-dd"));
       onComplete();
+    } catch (err) {
+      console.error("Recovery calculation failed:", err);
+      toast({ title: "Calculation failed", description: "Could not calculate recovery score.", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
