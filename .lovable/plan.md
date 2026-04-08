@@ -1,20 +1,20 @@
 
 
-## Three fixes to CheckIn.tsx
+## Plan: Add calculateRecovery call after check-in insert
 
-### 1. HRV warning — show only after typing, new thresholds & message
-- Change warning condition: show when `hrvRmssd !== ""` (user has typed) AND value is `< 10` or `> 200`
-- Update message text to: "⚠️ Typical RMSSD is between 10–200 ms. Double-check your device."
+### What changes
+**File: `src/pages/app/CheckIn.tsx`** (only file modified)
 
-### 2. Hide number input spinners
-- Add a `<style>` block (via inline JSX) at the top of the returned JSX to hide webkit spinner arrows and set `-moz-appearance: textfield` for all `input[type=number]` within the component. This avoids touching any other file.
+1. **Add imports** at top:
+   - `import { calculateRecovery } from '@/lib/api'`
+   - `import { format } from 'date-fns'`
 
-### 3. Disable submit until HRV > 0, soreness touched, feeling touched
-- Add two new state booleans: `sorenessSet` (default `false`) and `feelingSet` (default `false`)
-- Wrap `setSoreness` and `setFeeling` callbacks so they also flip the corresponding boolean to `true` on first interaction
-- Disable the submit button when: `loading || !hrvValue || hrvValue <= 0 || !sorenessSet || !feelingSet`
+2. **Modify `handleSubmit`** — in the success branch (lines 52-53), replace `onComplete()` with:
+   - Wrap in try/catch
+   - Call `await calculateRecovery(user.id, format(new Date(), 'yyyy-MM-dd'))`
+   - On success → call `onComplete()`
+   - On error → `console.error(err)`, show a destructive toast, do NOT call `onComplete()`
+   - Move `setLoading(false)` after the try/catch so the button stays disabled during recovery calculation
 
-### Files modified
-- `src/pages/app/CheckIn.tsx` — all three changes above
-- No other files touched
+### No other files modified
 
