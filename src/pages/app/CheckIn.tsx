@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import ScoreSlider from "@/components/ScoreSlider";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronDown } from "lucide-react";
+import { calculateRecovery } from "@/lib/api";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface CheckInProps {
