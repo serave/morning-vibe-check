@@ -1,20 +1,33 @@
 
 
-## Plan: Add calculateRecovery call after check-in insert
+## Add console.log statements to CheckIn.tsx
 
-### What changes
-**File: `src/pages/app/CheckIn.tsx`** (only file modified)
+Four `console.log` calls inserted into `handleSubmit`, no other changes:
 
-1. **Add imports** at top:
-   - `import { calculateRecovery } from '@/lib/api'`
-   - `import { format } from 'date-fns'`
+1. **Line 38** (before the insert): Add `console.log('Starting submit', { userId: user?.id })`
+2. **Line 55** (after insert succeeds, before try): Add `console.log('Insert success, calling calculateRecovery')`
+3. **Line 56–57** (before calculateRecovery): Add `const entryDate = format(new Date(), "yyyy-MM-dd");` and `console.log('Calling calculateRecovery with:', { userId: user?.id, entryDate })`, then use `entryDate` in the call
+4. **Line 57** (after calculateRecovery resolves): Add `console.log('calculateRecovery success')` right before `onComplete()`
 
-2. **Modify `handleSubmit`** — in the success branch (lines 52-53), replace `onComplete()` with:
-   - Wrap in try/catch
-   - Call `await calculateRecovery(user.id, format(new Date(), 'yyyy-MM-dd'))`
-   - On success → call `onComplete()`
-   - On error → `console.error(err)`, show a destructive toast, do NOT call `onComplete()`
-   - Move `setLoading(false)` after the try/catch so the button stays disabled during recovery calculation
+### Resulting handleSubmit
 
-### No other files modified
+```typescript
+const handleSubmit = async () => {
+  if (!user) return;
+  setLoading(true);
+  console.log('Starting submit', { userId: user?.id });
+  const { error } = await supabase.from("checkins").insert({ ... });
+  if (error) { ... return; }
+  console.log('Insert success, calling calculateRecovery');
+  try {
+    const entryDate = format(new Date(), "yyyy-MM-dd");
+    console.log('Calling calculateRecovery with:', { userId: user?.id, entryDate });
+    await calculateRecovery(user.id, entryDate);
+    console.log('calculateRecovery success');
+    onComplete();
+  } catch (err) { ... }
+};
+```
+
+Only `src/pages/app/CheckIn.tsx` is modified.
 
