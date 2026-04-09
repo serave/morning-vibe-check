@@ -40,7 +40,7 @@ const Today = () => {
 
   useEffect(() => {
     fetchToday();
-  }, [user, location.pathname]);
+  }, [user, location.key]);
 
   if (loading) {
     return (
