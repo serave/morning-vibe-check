@@ -183,35 +183,37 @@ const History = () => {
             onClick={() => { setSelectedDate(null); setShowConfirm(false); }}
           />
           {/* Sheet */}
-          <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-card p-6 shadow-lg animate-in slide-in-from-bottom duration-300">
+          <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[80vh] min-h-[280px] flex-col rounded-t-2xl bg-card p-6 pb-8 shadow-lg animate-in slide-in-from-bottom duration-300">
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-muted-foreground/30" />
 
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {format(new Date(selectedDate + "T00:00:00"), "EEEE, MMMM d")}
-                </p>
-                {selectedCheckin.recovery_score != null ? (
-                  <p className="mt-1 text-4xl font-bold" style={{ color: scoreColor(selectedCheckin.recovery_score) }}>
-                    {Math.round(selectedCheckin.recovery_score)}
+            <div className="flex-1 overflow-y-auto">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(selectedDate + "T00:00:00"), "EEEE, MMMM d")}
                   </p>
-                ) : (
-                  <p className="mt-1 text-lg text-muted-foreground">No score</p>
-                )}
+                  {selectedCheckin.recovery_score != null ? (
+                    <p className="mt-1 text-4xl font-bold" style={{ color: scoreColor(selectedCheckin.recovery_score) }}>
+                      {Math.round(selectedCheckin.recovery_score)}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-lg text-muted-foreground">No score</p>
+                  )}
+                </div>
+                <button onClick={() => { setSelectedDate(null); setShowConfirm(false); }} className="p-1 text-muted-foreground hover:text-foreground">
+                  <X className="h-5 w-5" />
+                </button>
               </div>
-              <button onClick={() => { setSelectedDate(null); setShowConfirm(false); }} className="p-1 text-muted-foreground hover:text-foreground">
-                <X className="h-5 w-5" />
-              </button>
+
+              {selectedCheckin.training_recommendation && (
+                <span className="mt-3 inline-block rounded-full bg-primary/15 px-3 py-1 text-xs font-medium text-primary">
+                  {selectedCheckin.training_recommendation}
+                </span>
+              )}
             </div>
 
-            {selectedCheckin.training_recommendation && (
-              <span className="mt-3 inline-block rounded-full bg-primary/15 px-3 py-1 text-xs font-medium text-primary">
-                {selectedCheckin.training_recommendation}
-              </span>
-            )}
-
             {!showConfirm ? (
-              <div className="mt-6 flex gap-3">
+              <div className="mt-auto flex gap-3 pt-4">
                 <Button
                   variant="outline"
                   className="flex-1 gap-2"
@@ -228,7 +230,7 @@ const History = () => {
                 </Button>
               </div>
             ) : (
-              <div className="mt-6">
+              <div className="mt-auto pt-4">
                 <p className="mb-3 text-sm text-foreground">
                   Delete this check-in? This will update your baseline.
                 </p>
