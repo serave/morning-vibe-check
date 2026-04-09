@@ -1,28 +1,19 @@
 
 
-## Fix: Replace `onComplete` with `navigate('/app')` in CheckIn.tsx
+## Fix: Force re-fetch on navigation in Today.tsx
 
-**File: `src/pages/app/CheckIn.tsx`**
-
-`onComplete` currently calls `fetchToday()` in the parent (Today.tsx), which re-queries the database. This may not find the new record if the edge function hasn't finished writing back. Replacing with a full route navigation forces a fresh mount of Today.tsx.
+**File: `src/pages/app/Today.tsx`** (only file modified)
 
 ### Changes
 
-1. **Add import**: `import { useNavigate } from "react-router-dom";`
-2. **Remove** the `onComplete` prop and `CheckInProps` interface entirely
-3. **Add** `const navigate = useNavigate();` inside the component
-4. **Replace** `onComplete()` (after calculateRecovery success) with `navigate('/app')`
-5. Remove `onComplete` from function signature
+1. **Add import**: `useLocation` from `react-router-dom`
+2. **Add hook**: `const location = useLocation();` inside component
+3. **Update useEffect deps**: Change `[user]` to `[user, location.pathname]`
+4. **Reset loading on re-fetch**: Set `setLoading(true)` at the start of `fetchToday()` so the spinner shows while re-querying after navigation
 
-Wait — the user said "Do not modify any other files", but Today.tsx passes `onComplete` as a prop. If I remove the prop from CheckIn, Today.tsx will have a type error passing it.
+This ensures that when `navigate('/app')` is called from CheckIn, the route change triggers the useEffect to re-run `fetchToday()`, which will now find the newly inserted checkin record and render Results.
 
-**Revised approach** — minimal change, keep the prop interface:
-
-1. **Add import**: `import { useNavigate } from "react-router-dom";`
-2. **Add** `const navigate = useNavigate();` at top of component body
-3. **Replace** `onComplete()` on success with `navigate('/app')`
-
-The `onComplete` prop stays in the interface (unused but harmless), so Today.tsx doesn't break.
+No `refreshKey` state is needed — the `location.pathname` dependency achieves the same goal more cleanly.
 
 ### No other files modified
 
