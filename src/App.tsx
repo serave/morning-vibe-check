@@ -13,6 +13,7 @@ import Today from "./pages/app/Today";
 import History from "./pages/app/History";
 import Trends from "./pages/app/Trends";
 import AppSettings from "./pages/app/AppSettings";
+import EditCheckin from "./pages/app/EditCheckin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
