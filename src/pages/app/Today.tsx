@@ -21,7 +21,7 @@ const Today = () => {
       supabase
         .from("checkins")
         .select(
-          "entry_date, sleep_hours, soreness, feeling, recovery_score, training_recommendation, sleep_score, soreness_score, wellbeing_score, hrv_score, lowest_factor, baseline_phase, notes"
+          "entry_date, sleep_hours, soreness, feeling, recovery_score, training_recommendation, sleep_score, soreness_score, wellbeing_score, hrv_score, lowest_factor, baseline_phase"
         )
         .eq("user_id", user.id)
         .eq("entry_date", today)
