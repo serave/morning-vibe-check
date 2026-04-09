@@ -42,6 +42,7 @@ const App = () => (
               <Route path="history" element={<History />} />
               <Route path="trends" element={<Trends />} />
               <Route path="settings" element={<AppSettings />} />
+              <Route path="edit/:date" element={<EditCheckin />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
