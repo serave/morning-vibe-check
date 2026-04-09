@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ interface CheckInProps {
 
 const CheckIn = ({ onComplete }: CheckInProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [hrvRmssd, setHrvRmssd] = useState<string>("");
   const [sleepHours, setSleepHours] = useState(7);
@@ -60,7 +62,7 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
       console.log('Calling calculateRecovery with:', { userId: user?.id, entryDate });
       await calculateRecovery(user.id, entryDate);
       console.log('calculateRecovery success');
-      onComplete();
+      navigate('/app');
     } catch (err) {
       console.error("Recovery calculation failed:", err);
       toast({ title: "Calculation failed", description: "Could not calculate recovery score.", variant: "destructive" });
