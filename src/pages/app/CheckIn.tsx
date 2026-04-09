@@ -36,6 +36,7 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
   const handleSubmit = async () => {
     if (!user) return;
     setLoading(true);
+    console.log('Starting submit', { userId: user?.id });
     const { error } = await supabase.from("checkins").insert({
       user_id: user.id,
       entry_date: new Date().toISOString().split("T")[0],
@@ -53,8 +54,12 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
+    console.log('Insert success, calling calculateRecovery');
     try {
-      await calculateRecovery(user.id, format(new Date(), "yyyy-MM-dd"));
+      const entryDate = format(new Date(), "yyyy-MM-dd");
+      console.log('Calling calculateRecovery with:', { userId: user?.id, entryDate });
+      await calculateRecovery(user.id, entryDate);
+      console.log('calculateRecovery success');
       onComplete();
     } catch (err) {
       console.error("Recovery calculation failed:", err);
