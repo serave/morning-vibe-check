@@ -183,7 +183,7 @@ const History = () => {
             onClick={() => { setSelectedDate(null); setShowConfirm(false); }}
           />
           {/* Sheet */}
-          <div className="<div className="fixed inset-x-0 bottom-16 z-50 flex max-h-[80vh] min-h-[280px] flex-col rounded-t-2xl bg-card p-6 pb-8 shadow-lg animate-in slide-in-from-bottom duration-300"> flex-col rounded-t-2xl bg-card p-6 pb-8 shadow-lg animate-in slide-in-from-bottom duration-300">
+          <div className="fixed inset-x-0 bottom-16 z-50 flex max-h-[80vh] min-h-[280px] flex-col rounded-t-2xl bg-card p-6 pb-8 shadow-lg animate-in slide-in-from-bottom duration-300">
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-muted-foreground/30" />
 
             <div className="flex-1 overflow-y-auto">
