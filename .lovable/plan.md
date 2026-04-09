@@ -1,26 +1,20 @@
 
 
-## Fix: Remove `notes` from checkins select in Today.tsx
+## Fix: Use `location.key` instead of `location.pathname` in Today.tsx
 
 **File: `src/pages/app/Today.tsx`** (only file modified)
 
-**Root cause**: The select string on line 24 includes `notes`, but the `checkins` table has no `notes` column. This causes a 400 error (`column checkins.notes does not exist`). Note: `hrv_deviation` is not currently in the select string — the actual offending column is `notes`.
+**Root cause**: `navigate('/app')` from CheckIn doesn't change `location.pathname` (it's already `/app`), so the useEffect never re-fires. React Router's `location.key` updates on every navigation call, even to the same path.
 
 ### Change
 
-Line 24: Remove `notes` from the select string.
+In the useEffect dependency array, replace `location.pathname` with `location.key`:
 
-Before:
-```
-"entry_date, sleep_hours, soreness, feeling, recovery_score, training_recommendation, sleep_score, soreness_score, wellbeing_score, hrv_score, lowest_factor, baseline_phase, notes"
-```
-
-After:
-```
-"entry_date, sleep_hours, soreness, feeling, recovery_score, training_recommendation, sleep_score, soreness_score, wellbeing_score, hrv_score, lowest_factor, baseline_phase"
+```typescript
+useEffect(() => {
+  fetchToday();
+}, [user, location.key]);
 ```
 
-Also need to confirm Results.tsx references to `notes` won't break — they'll just receive `undefined`/`null` which the conditional rendering already handles gracefully.
-
-### No other files modified
+One-line change. No other files modified.
 
