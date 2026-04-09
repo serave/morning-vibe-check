@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import CheckIn from "./CheckIn";
@@ -6,12 +7,14 @@ import Results from "./Results";
 
 const Today = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [todayCheckin, setTodayCheckin] = useState<any>(null);
   const [streakCount, setStreakCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   const fetchToday = async () => {
     if (!user) return;
+    setLoading(true);
     const today = new Date().toISOString().split("T")[0];
 
     const [checkinRes, profileRes] = await Promise.all([
@@ -37,7 +40,7 @@ const Today = () => {
 
   useEffect(() => {
     fetchToday();
-  }, [user]);
+  }, [user, location.pathname]);
 
   if (loading) {
     return (
