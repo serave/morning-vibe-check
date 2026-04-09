@@ -1,19 +1,26 @@
 
 
-## Fix: Force re-fetch on navigation in Today.tsx
+## Fix: Remove `notes` from checkins select in Today.tsx
 
 **File: `src/pages/app/Today.tsx`** (only file modified)
 
-### Changes
+**Root cause**: The select string on line 24 includes `notes`, but the `checkins` table has no `notes` column. This causes a 400 error (`column checkins.notes does not exist`). Note: `hrv_deviation` is not currently in the select string — the actual offending column is `notes`.
 
-1. **Add import**: `useLocation` from `react-router-dom`
-2. **Add hook**: `const location = useLocation();` inside component
-3. **Update useEffect deps**: Change `[user]` to `[user, location.pathname]`
-4. **Reset loading on re-fetch**: Set `setLoading(true)` at the start of `fetchToday()` so the spinner shows while re-querying after navigation
+### Change
 
-This ensures that when `navigate('/app')` is called from CheckIn, the route change triggers the useEffect to re-run `fetchToday()`, which will now find the newly inserted checkin record and render Results.
+Line 24: Remove `notes` from the select string.
 
-No `refreshKey` state is needed — the `location.pathname` dependency achieves the same goal more cleanly.
+Before:
+```
+"entry_date, sleep_hours, soreness, feeling, recovery_score, training_recommendation, sleep_score, soreness_score, wellbeing_score, hrv_score, lowest_factor, baseline_phase, notes"
+```
+
+After:
+```
+"entry_date, sleep_hours, soreness, feeling, recovery_score, training_recommendation, sleep_score, soreness_score, wellbeing_score, hrv_score, lowest_factor, baseline_phase"
+```
+
+Also need to confirm Results.tsx references to `notes` won't break — they'll just receive `undefined`/`null` which the conditional rendering already handles gracefully.
 
 ### No other files modified
 
