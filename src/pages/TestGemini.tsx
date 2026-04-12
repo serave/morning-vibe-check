@@ -24,7 +24,7 @@ const TestGemini = () => {
     setRawResponse("");
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_AI_STUDIO}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
