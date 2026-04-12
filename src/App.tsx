@@ -15,6 +15,7 @@ import Trends from "./pages/app/Trends";
 import AppSettings from "./pages/app/AppSettings";
 import EditCheckin from "./pages/app/EditCheckin";
 import NotFound from "./pages/NotFound";
+import TestGemini from "./pages/TestGemini";
 
 const queryClient = new QueryClient();
 
