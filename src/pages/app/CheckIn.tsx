@@ -4,16 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import ScoreSlider from "@/components/ScoreSlider";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronDown } from "lucide-react";
 import { calculateRecovery } from "@/lib/api";
+import { analyzeSentiment } from "@/lib/gemini";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface CheckInProps {
   onComplete: () => void;
 }
+
+const NOTES_MAX = 500;
 
 const CheckIn = ({ onComplete }: CheckInProps) => {
   const { user } = useAuth();
@@ -29,7 +33,9 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
   const [sport, setSport] = useState("");
   const [trainingIntensity, setTrainingIntensity] = useState(5);
   const [trainingDuration, setTrainingDuration] = useState<string>("");
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [analyzingNote, setAnalyzingNote] = useState(false);
 
   const hrvValue = hrvRmssd ? Number(hrvRmssd) : null;
   const showHrvWarning = hrvRmssd !== "" && hrvValue !== null && (hrvValue < 10 || hrvValue > 200);
@@ -38,37 +44,78 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
   const handleSubmit = async () => {
     if (!user) return;
     setLoading(true);
-    console.log('Starting submit', { userId: user?.id });
-    const { error } = await supabase.from("checkins").insert({
-      user_id: user.id,
-      entry_date: new Date().toISOString().split("T")[0],
-      hrv_rmssd: hrvValue,
-      sleep_hours: sleepHours,
-      soreness,
-      feeling,
-      trained_yesterday: trainedYesterday,
-      sport: trainedYesterday && sport ? sport : null,
-      training_intensity: trainedYesterday ? trainingIntensity : null,
-      training_duration_min: trainedYesterday && trainingDuration ? Number(trainingDuration) : null,
-    });
-    if (error) {
+
+    const entryDate = format(new Date(), "yyyy-MM-dd");
+    const trimmedNotes = notes.trim();
+
+    // 1. Insert the checkin row
+    const { data: inserted, error } = await supabase
+      .from("checkins")
+      .insert({
+        user_id: user.id,
+        entry_date: entryDate,
+        hrv_rmssd: hrvValue,
+        sleep_hours: sleepHours,
+        soreness,
+        feeling,
+        trained_yesterday: trainedYesterday,
+        sport: trainedYesterday && sport ? sport : null,
+        training_intensity: trainedYesterday ? trainingIntensity : null,
+        training_duration_min: trainedYesterday && trainingDuration ? Number(trainingDuration) : null,
+        notes: trimmedNotes || null,
+      })
+      .select("id")
+      .single();
+
+    if (error || !inserted) {
       setLoading(false);
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: error?.message || "Failed to save check-in", variant: "destructive" });
       return;
     }
-    console.log('Insert success, calling calculateRecovery');
+
+    // 2. Calculate recovery score
     try {
-      const entryDate = format(new Date(), "yyyy-MM-dd");
-      console.log('Calling calculateRecovery with:', { userId: user?.id, entryDate });
       await calculateRecovery(user.id, entryDate);
-      console.log('calculateRecovery success');
-      navigate('/app');
     } catch (err) {
       console.error("Recovery calculation failed:", err);
       toast({ title: "Calculation failed", description: "Could not calculate recovery score.", variant: "destructive" });
-    } finally {
-      setLoading(false);
     }
+
+    // 3. If notes exist, run sentiment analysis and update the row
+    if (trimmedNotes) {
+      setAnalyzingNote(true);
+      try {
+        const sentimentScore = await analyzeSentiment(trimmedNotes);
+        const sentimentLabel = sentimentScore > 0.3 ? "positive" : sentimentScore < -0.3 ? "negative" : "neutral";
+
+        // Fetch current wellbeing_score to adjust it
+        const { data: current } = await supabase
+          .from("checkins")
+          .select("wellbeing_score")
+          .eq("id", inserted.id)
+          .single();
+
+        const currentWellbeing = current?.wellbeing_score ?? 50;
+        const adjustedWellbeing = Math.min(100, Math.max(0, Number(currentWellbeing) + sentimentScore * 10));
+
+        await supabase
+          .from("checkins")
+          .update({
+            sentiment_score: sentimentScore,
+            sentiment_label: sentimentLabel,
+            wellbeing_score: adjustedWellbeing,
+          })
+          .eq("id", inserted.id);
+      } catch (err) {
+        console.error("Sentiment analysis failed:", err);
+        // Non-blocking — don't prevent navigation
+      } finally {
+        setAnalyzingNote(false);
+      }
+    }
+
+    setLoading(false);
+    navigate("/app");
   };
 
   return (
@@ -136,6 +183,24 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
         <ScoreSlider label="Soreness" emoji="💪" value={soreness} onChange={(v) => { setSoreness(v); setSorenessSet(true); }} lowLabel="None" highLabel="Extreme" min={1} max={5} />
         <ScoreSlider label="Feeling" emoji="😊" value={feeling} onChange={(v) => { setFeeling(v); setFeelingSet(true); }} lowLabel="Terrible" highLabel="Great" min={1} max={5} />
 
+        {/* Notes (optional) */}
+        <div className="rounded-lg bg-card p-4">
+          <label className="mb-2 block text-sm font-medium text-foreground">
+            ✏️ Anything else? <span className="font-normal text-muted-foreground">(optional)</span>
+          </label>
+          <Textarea
+            rows={3}
+            maxLength={NOTES_MAX}
+            placeholder="How are you really feeling today? Any context helps..."
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="bg-secondary text-foreground resize-none"
+          />
+          <p className="mt-1 text-right text-xs text-muted-foreground">
+            {notes.length}/{NOTES_MAX}
+          </p>
+        </div>
+
         {/* Yesterday's Training */}
         <div className="rounded-lg bg-card p-4">
           <button
@@ -154,7 +219,6 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
 
           {trainedYesterday && (
             <div className="mt-4 flex animate-fade-in flex-col gap-4">
-              {/* Sport/Activity */}
               <div>
                 <label className="mb-1 block text-xs text-muted-foreground">Sport / Activity</label>
                 <Input
@@ -165,8 +229,6 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
                   className="bg-secondary text-foreground"
                 />
               </div>
-
-              {/* Intensity */}
               <div>
                 <div className="mb-1 flex items-center justify-between">
                   <label className="text-xs text-muted-foreground">Intensity</label>
@@ -186,8 +248,6 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
                   <span>All-Out</span>
                 </div>
               </div>
-
-              {/* Duration */}
               <div>
                 <label className="mb-1 block text-xs text-muted-foreground">Duration</label>
                 <Input
@@ -204,7 +264,7 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
         </div>
 
         <Button onClick={handleSubmit} disabled={isSubmitDisabled} className="mt-2 h-14 w-full rounded-sm text-base font-semibold">
-          {loading ? "Saving…" : "Submit Check-In"}
+          {analyzingNote ? "Analyzing your note…" : loading ? "Saving…" : "Submit Check-In"}
         </Button>
       </div>
     </div>
