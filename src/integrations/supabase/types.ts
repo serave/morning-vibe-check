@@ -64,6 +64,36 @@ export type Database = {
           },
         ]
       }
+      checkin_tags: {
+        Row: {
+          checkin_id: string
+          tag_id: string
+        }
+        Insert: {
+          checkin_id: string
+          tag_id: string
+        }
+        Update: {
+          checkin_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkin_tags_checkin_id_fkey"
+            columns: ["checkin_id"]
+            isOneToOne: false
+            referencedRelation: "checkins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkin_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checkins: {
         Row: {
           baseline_phase: string | null
@@ -76,7 +106,10 @@ export type Database = {
           id: string
           is_backdated: boolean | null
           lowest_factor: string | null
+          notes: string | null
           recovery_score: number | null
+          sentiment_label: string | null
+          sentiment_score: number | null
           sleep_hours: number | null
           sleep_score: number | null
           soreness: number | null
@@ -103,7 +136,10 @@ export type Database = {
           id?: string
           is_backdated?: boolean | null
           lowest_factor?: string | null
+          notes?: string | null
           recovery_score?: number | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
           sleep_hours?: number | null
           sleep_score?: number | null
           soreness?: number | null
@@ -130,7 +166,10 @@ export type Database = {
           id?: string
           is_backdated?: boolean | null
           lowest_factor?: string | null
+          notes?: string | null
           recovery_score?: number | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
           sleep_hours?: number | null
           sleep_score?: number | null
           soreness?: number | null
@@ -188,6 +227,41 @@ export type Database = {
           timezone?: string | null
         }
         Relationships: []
+      }
+      tags: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          is_preset: boolean | null
+          name: string
+          user_id: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_preset?: boolean | null
+          name: string
+          user_id?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_preset?: boolean | null
+          name?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tags_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
