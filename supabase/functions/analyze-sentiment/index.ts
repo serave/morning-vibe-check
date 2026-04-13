@@ -46,11 +46,20 @@ Text to analyze: "${text}"`
       }
     )
 
+    if (!geminiRes.ok) {
+      const errBody = await geminiRes.text()
+      console.error('Gemini API error:', geminiRes.status, errBody)
+      return new Response(JSON.stringify({ error: `Gemini API error (${geminiRes.status}): ${errBody}` }), {
+        status: 502,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const data = await geminiRes.json()
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
     if (!raw) {
       console.error('Unexpected Gemini response:', JSON.stringify(data))
-      return new Response(JSON.stringify({ error: 'Invalid response from AI' }), {
+      return new Response(JSON.stringify({ error: 'Invalid response structure from AI' }), {
         status: 502,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
