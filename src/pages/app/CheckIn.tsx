@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,6 +40,20 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
   const hrvValue = hrvRmssd ? Number(hrvRmssd) : null;
   const showHrvWarning = hrvRmssd !== "" && hrvValue !== null && (hrvValue < 10 || hrvValue > 200);
   const isSubmitDisabled = loading || !hrvValue || hrvValue <= 0 || !sorenessSet || !feelingSet;
+
+  useEffect(() => {
+    if (!user) return;
+    const today = format(new Date(), "yyyy-MM-dd");
+    supabase
+      .from("checkins")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("entry_date", today)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) onComplete();
+      });
+  }, [user]);
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -115,7 +129,7 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
     }
 
     setLoading(false);
-    navigate("/app");
+    onComplete();
   };
 
   return (
