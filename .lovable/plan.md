@@ -1,14 +1,28 @@
 
 
-## Plan: Fix infinite loop in CheckIn.tsx useEffect
+## Plan: Fix useEffect with cleanup flag and empty deps
 
-**Problem:** The `useEffect` calls `onComplete()` which triggers a parent re-render, re-mounting CheckIn, re-running the effect → infinite loop.
+**File:** `src/pages/app/CheckIn.tsx`
 
-**Fix:** In the `useEffect` (around lines 44-54 of `src/pages/app/CheckIn.tsx`), replace `onComplete()` with `navigate("/app", { replace: true })` when an existing check-in is found.
+**Change:** Replace lines 44-56 with the user's exact code — adds a cleanup flag (`active`) to prevent stale calls and changes the dependency array from `[user]` to `[]`.
 
-**Change:** One line change inside the `.then()` callback:
-- Before: `if (data) onComplete();`
-- After: `if (data) navigate("/app", { replace: true });`
+```typescript
+useEffect(() => {
+  if (!user) return;
+  let active = true;
+  const today = format(new Date(), "yyyy-MM-dd");
+  supabase
+    .from("checkins")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("entry_date", today)
+    .maybeSingle()
+    .then(({ data }) => {
+      if (active && data) onComplete();
+    });
+  return () => { active = false; };
+}, []);
+```
 
-`handleSubmit` remains unchanged — it still calls `onComplete()` at the end. No other files modified.
+No other files modified.
 
