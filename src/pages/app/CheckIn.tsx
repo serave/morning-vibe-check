@@ -43,6 +43,7 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
 
   useEffect(() => {
     if (!user) return;
+    let active = true;
     const today = format(new Date(), "yyyy-MM-dd");
     supabase
       .from("checkins")
@@ -51,9 +52,10 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
       .eq("entry_date", today)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) onComplete();
+        if (active && data) onComplete();
       });
-  }, [user]);
+    return () => { active = false; };
+  }, []);
 
   const handleSubmit = async () => {
     if (!user) return;
