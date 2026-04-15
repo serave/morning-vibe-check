@@ -1,12 +1,14 @@
 
 
-## Plan: Update CheckIn.tsx with duplicate-check and navigation fix
+## Plan: Fix infinite loop in CheckIn.tsx useEffect
 
-Two targeted changes to `src/pages/app/CheckIn.tsx`:
+**Problem:** The `useEffect` calls `onComplete()` which triggers a parent re-render, re-mounting CheckIn, re-running the effect → infinite loop.
 
-1. **Add useEffect** after the useState block (~line 41) to check for an existing check-in on mount. If one exists for today, call `onComplete()` immediately to skip the form.
+**Fix:** In the `useEffect` (around lines 44-54 of `src/pages/app/CheckIn.tsx`), replace `onComplete()` with `navigate("/app", { replace: true })` when an existing check-in is found.
 
-2. **Replace `navigate("/app")`** at the end of `handleSubmit` (~line 97) with `onComplete()` so the parent refetches and shows Results without a full navigation.
+**Change:** One line change inside the `.then()` callback:
+- Before: `if (data) onComplete();`
+- After: `if (data) navigate("/app", { replace: true });`
 
-No other files modified. The `useEffect` import already exists via React, and `format` + `supabase` are already imported.
+`handleSubmit` remains unchanged — it still calls `onComplete()` at the end. No other files modified.
 
