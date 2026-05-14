@@ -1,5 +1,5 @@
 import { Capacitor } from "@capacitor/core";
-import { CapacitorHealthkit, SampleNames, type QueryOutput } from "@perfood/capacitor-healthkit";
+import { CapacitorHealthkit, type QueryOutput } from "@perfood/capacitor-healthkit";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays } from "date-fns";
 
@@ -89,7 +89,7 @@ export const syncHealthData = async (userId: string, daysBack = 7): Promise<Sync
 
   // HRV — values are in seconds (HKUnit: ms = .secondUnit(with: .milli))
   // The plugin returns the raw value; HealthKit HRV samples come as seconds, multiply by 1000
-  const hrvData = await queryHK<any>(SampleNames.HEART_RATE_VARIABILITY ?? "heartRateVariability", startDate, endDate);
+  const hrvData = await queryHK<any>("heartRateVariability", startDate, endDate);
   const hrvByDay = groupByDay(
     hrvData,
     (d: any) => d.startDate,
@@ -105,7 +105,7 @@ export const syncHealthData = async (userId: string, daysBack = 7): Promise<Sync
   }
 
   // Sleep — sum duration (seconds) of "asleep" states per night
-  const sleepData = await queryHK<any>(SampleNames.SLEEP_ANALYSIS ?? "sleepAnalysis", startDate, endDate);
+  const sleepData = await queryHK<any>("sleepAnalysis", startDate, endDate);
   const sleepByDay = new Map<string, number>();
   for (const s of sleepData) {
     const state = (s.sleepState ?? s.value ?? "").toString().toLowerCase();
@@ -124,7 +124,7 @@ export const syncHealthData = async (userId: string, daysBack = 7): Promise<Sync
   }
 
   // Resting HR — average per day (bpm)
-  const rhrData = await queryHK<any>(SampleNames.RESTING_HEART_RATE ?? "restingHeartRate", startDate, endDate);
+  const rhrData = await queryHK<any>("restingHeartRate", startDate, endDate);
   const rhrByDay = groupByDay(
     rhrData,
     (d: any) => d.startDate,
