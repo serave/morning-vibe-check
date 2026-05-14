@@ -1,11 +1,11 @@
 import { Capacitor } from "@capacitor/core";
-import { CapacitorHealth } from "capacitor-health";
+import { CapacitorHealthkit, SampleNames, type QueryOutput } from "@perfood/capacitor-healthkit";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays } from "date-fns";
 
 export type HealthPlatform = "HEALTHKIT" | "HEALTH_CONNECT" | null;
 
-export const PERMISSIONS = ["READ_HEART_RATE_VARIABILITY", "READ_SLEEP", "READ_RESTING_HEART_RATE"];
+const READ_PERMISSIONS = ["heartRateVariability", "sleepAnalysis", "restingHeartRate"];
 
 export const getHealthPlatform = (): HealthPlatform => {
   if (!Capacitor.isNativePlatform()) return null;
@@ -16,24 +16,35 @@ export const getHealthPlatform = (): HealthPlatform => {
 };
 
 export const isHealthAvailable = async (): Promise<boolean> => {
-  if (!getHealthPlatform()) return false;
-  try {
-    const res = await CapacitorHealth.isHealthAvailable();
-    return !!res?.available;
-  } catch {
-    return false;
+  const platform = getHealthPlatform();
+  if (platform === "HEALTHKIT") {
+    try {
+      await CapacitorHealthkit.isAvailable();
+      return true;
+    } catch {
+      return false;
+    }
   }
+  // Health Connect: integration pending
+  return false;
 };
 
 export const requestHealthPermissions = async (): Promise<boolean> => {
-  if (!getHealthPlatform()) return false;
-  try {
-    await CapacitorHealth.requestHealthPermissions({ permissions: PERMISSIONS as any });
-    return true;
-  } catch (e) {
-    console.error("health permission error", e);
-    return false;
+  const platform = getHealthPlatform();
+  if (platform === "HEALTHKIT") {
+    try {
+      await CapacitorHealthkit.requestAuthorization({
+        all: [],
+        read: READ_PERMISSIONS,
+        write: [],
+      });
+      return true;
+    } catch (e) {
+      console.error("HealthKit permission error", e);
+      return false;
+    }
   }
+  return false;
 };
 
 interface SyncedSample {
@@ -42,75 +53,86 @@ interface SyncedSample {
   entry_date: string;
 }
 
+const queryHK = async <T,>(sampleName: string, startDate: Date, endDate: Date) => {
+  try {
+    const res = (await CapacitorHealthkit.queryHKitSampleType<T>({
+      sampleName,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      limit: 0,
+    })) as QueryOutput<T>;
+    return res?.resultData ?? [];
+  } catch (e) {
+    console.warn(`HealthKit query failed for ${sampleName}`, e);
+    return [];
+  }
+};
+
+const groupByDay = <T,>(items: T[], dateKey: (i: T) => string, valueFn: (i: T) => number) => {
+  const map = new Map<string, number[]>();
+  for (const item of items) {
+    const day = format(new Date(dateKey(item)), "yyyy-MM-dd");
+    const arr = map.get(day) ?? [];
+    arr.push(valueFn(item));
+    map.set(day, arr);
+  }
+  return map;
+};
+
 export const syncHealthData = async (userId: string, daysBack = 7): Promise<SyncedSample[]> => {
   const platform = getHealthPlatform();
-  if (!platform) return [];
+  if (platform !== "HEALTHKIT") return [];
 
   const endDate = new Date();
   const startDate = subDays(endDate, daysBack);
   const samples: SyncedSample[] = [];
 
-  // HRV (RMSSD in ms)
-  try {
-    const hrv: any = await CapacitorHealth.queryAggregated({
-      dataType: "heart-rate-variability" as any,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      bucket: "day",
-    });
-    for (const r of hrv?.aggregatedData ?? []) {
-      if (r.value != null) {
-        samples.push({
-          sample_type: "hrv_rmssd",
-          value: Number(r.value),
-          entry_date: format(new Date(r.startDate), "yyyy-MM-dd"),
-        });
-      }
+  // HRV — values are in seconds (HKUnit: ms = .secondUnit(with: .milli))
+  // The plugin returns the raw value; HealthKit HRV samples come as seconds, multiply by 1000
+  const hrvData = await queryHK<any>(SampleNames.HEART_RATE_VARIABILITY ?? "heartRateVariability", startDate, endDate);
+  const hrvByDay = groupByDay(
+    hrvData,
+    (d: any) => d.startDate,
+    (d: any) => {
+      const v = Number(d.value ?? d.heartRateVariability ?? 0);
+      // HealthKit HRV is in seconds → convert to ms if value < 1
+      return v < 1 ? v * 1000 : v;
     }
-  } catch (e) {
-    console.warn("HRV query failed", e);
+  );
+  for (const [day, values] of hrvByDay) {
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    samples.push({ sample_type: "hrv_rmssd", value: Math.round(avg * 10) / 10, entry_date: day });
   }
 
-  // Sleep (hours)
-  try {
-    const sleep: any = await CapacitorHealth.queryAggregated({
-      dataType: "sleep" as any,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      bucket: "day",
+  // Sleep — sum duration (seconds) of "asleep" states per night
+  const sleepData = await queryHK<any>(SampleNames.SLEEP_ANALYSIS ?? "sleepAnalysis", startDate, endDate);
+  const sleepByDay = new Map<string, number>();
+  for (const s of sleepData) {
+    const state = (s.sleepState ?? s.value ?? "").toString().toLowerCase();
+    if (!state.includes("asleep") && state !== "asleep" && !state.includes("sleep")) continue;
+    if (state.includes("awake") || state.includes("inbed")) continue;
+    const dur = Number(s.duration ?? 0);
+    const day = format(new Date(s.endDate ?? s.startDate), "yyyy-MM-dd");
+    sleepByDay.set(day, (sleepByDay.get(day) ?? 0) + dur);
+  }
+  for (const [day, secs] of sleepByDay) {
+    samples.push({
+      sample_type: "sleep_hours",
+      value: Math.round((secs / 3600) * 10) / 10,
+      entry_date: day,
     });
-    for (const r of sleep?.aggregatedData ?? []) {
-      if (r.value != null) {
-        samples.push({
-          sample_type: "sleep_hours",
-          value: Number(r.value) / 3600, // seconds → hours
-          entry_date: format(new Date(r.startDate), "yyyy-MM-dd"),
-        });
-      }
-    }
-  } catch (e) {
-    console.warn("Sleep query failed", e);
   }
 
-  // Resting HR
-  try {
-    const rhr: any = await CapacitorHealth.queryAggregated({
-      dataType: "resting-heart-rate" as any,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      bucket: "day",
-    });
-    for (const r of rhr?.aggregatedData ?? []) {
-      if (r.value != null) {
-        samples.push({
-          sample_type: "resting_hr",
-          value: Number(r.value),
-          entry_date: format(new Date(r.startDate), "yyyy-MM-dd"),
-        });
-      }
-    }
-  } catch (e) {
-    console.warn("RHR query failed", e);
+  // Resting HR — average per day (bpm)
+  const rhrData = await queryHK<any>(SampleNames.RESTING_HEART_RATE ?? "restingHeartRate", startDate, endDate);
+  const rhrByDay = groupByDay(
+    rhrData,
+    (d: any) => d.startDate,
+    (d: any) => Number(d.value ?? d.restingHeartRate ?? 0)
+  );
+  for (const [day, values] of rhrByDay) {
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    samples.push({ sample_type: "resting_hr", value: Math.round(avg), entry_date: day });
   }
 
   if (samples.length > 0) {
@@ -124,7 +146,7 @@ export const syncHealthData = async (userId: string, daysBack = 7): Promise<Sync
     {
       user_id: userId,
       platform,
-      permissions_granted: PERMISSIONS,
+      permissions_granted: READ_PERMISSIONS,
       last_synced_at: new Date().toISOString(),
     },
     { onConflict: "user_id,platform" }
