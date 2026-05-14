@@ -177,10 +177,23 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
       </div>
 
       <div className="flex flex-col gap-3">
+        {autofilledFrom && (
+          <div className="rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary">
+            ✨ Auto-filled from {autofilledFrom} — edit anything that's off.
+          </div>
+        )}
+        {healthSyncing && !autofilledFrom && (
+          <div className="rounded-lg bg-card px-3 py-2 text-xs text-muted-foreground">
+            Syncing health data…
+          </div>
+        )}
         {/* HRV (RMSSD) */}
         <div className="rounded-lg bg-card p-4">
           <div className="mb-3 flex items-center justify-between">
             <span className="text-sm font-medium text-foreground">💓 HRV (RMSSD)</span>
+            {autofilledFrom && hrvRmssd && (
+              <span className="text-[10px] font-medium uppercase tracking-wide text-primary">Synced</span>
+            )}
           </div>
           <Input
             type="number"
