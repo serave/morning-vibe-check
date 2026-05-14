@@ -12,6 +12,7 @@ import { calculateRecovery } from "@/lib/api";
 import { analyzeSentiment } from "@/lib/gemini";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { getHealthPlatform, syncHealthData, getTodayHealth } from "@/lib/health";
 
 interface CheckInProps {
   onComplete: () => void;
@@ -36,6 +37,8 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [analyzingNote, setAnalyzingNote] = useState(false);
+  const [autofilledFrom, setAutofilledFrom] = useState<string | null>(null);
+  const [healthSyncing, setHealthSyncing] = useState(false);
 
   const hrvValue = hrvRmssd ? Number(hrvRmssd) : null;
   const showHrvWarning = hrvRmssd !== "" && hrvValue !== null && (hrvValue < 10 || hrvValue > 200);
@@ -45,6 +48,7 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
     if (!user) return;
     let active = true;
     const today = format(new Date(), "yyyy-MM-dd");
+
     supabase
       .from("checkins")
       .select("id")
@@ -54,6 +58,29 @@ const CheckIn = ({ onComplete }: CheckInProps) => {
       .then(({ data }) => {
         if (active && data) onComplete();
       });
+
+    // Auto-fill from health platform (silent — non-blocking)
+    (async () => {
+      const platform = getHealthPlatform();
+      try {
+        if (platform) {
+          setHealthSyncing(true);
+          await syncHealthData(user.id, 2);
+        }
+        const today = await getTodayHealth(user.id);
+        if (!active) return;
+        if (today.hrv_rmssd != null) setHrvRmssd(String(Math.round(today.hrv_rmssd)));
+        if (today.sleep_hours != null) setSleepHours(Math.round(today.sleep_hours * 2) / 2);
+        if (today.source) {
+          setAutofilledFrom(today.source === "HEALTHKIT" ? "Apple Health" : "Health Connect");
+        }
+      } catch (e) {
+        console.warn("Health auto-fill failed", e);
+      } finally {
+        if (active) setHealthSyncing(false);
+      }
+    })();
+
     return () => { active = false; };
   }, []);
 
