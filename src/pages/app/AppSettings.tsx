@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronDown, ChevronUp, Download, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, Trash2, HeartPulse, ChevronRight } from "lucide-react";
 
 const TIMEZONES = [
   "America/New_York",
@@ -195,6 +195,21 @@ const AppSettings = () => {
               </Button>
             </div>
           )}
+        </div>
+
+        {/* Integrations */}
+        <div className="rounded-lg bg-card p-4">
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Integrations</h2>
+          <button
+            onClick={() => navigate("/app/connect-health")}
+            className="flex w-full items-center justify-between rounded-sm bg-secondary px-3 py-3 text-left transition-colors hover:bg-secondary/80"
+          >
+            <span className="flex items-center gap-2 text-sm text-foreground">
+              <HeartPulse className="h-4 w-4 text-primary" />
+              Apple Health / Health Connect
+            </span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </button>
         </div>
 
         {/* Data Export */}
