@@ -14,6 +14,7 @@ import History from "./pages/app/History";
 import Trends from "./pages/app/Trends";
 import AppSettings from "./pages/app/AppSettings";
 import EditCheckin from "./pages/app/EditCheckin";
+import ConnectHealth from "./pages/app/ConnectHealth";
 import NotFound from "./pages/NotFound";
 import TestGemini from "./pages/TestGemini";
 
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="trends" element={<Trends />} />
               <Route path="settings" element={<AppSettings />} />
               <Route path="edit/:date" element={<EditCheckin />} />
+              <Route path="connect-health" element={<ConnectHealth />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
