@@ -195,6 +195,69 @@ export type Database = {
           },
         ]
       }
+      health_connections: {
+        Row: {
+          connected_at: string
+          id: string
+          last_synced_at: string | null
+          permissions_granted: Json
+          platform: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_at?: string
+          id?: string
+          last_synced_at?: string | null
+          permissions_granted?: Json
+          platform: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_at?: string
+          id?: string
+          last_synced_at?: string | null
+          permissions_granted?: Json
+          platform?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      health_samples: {
+        Row: {
+          created_at: string
+          entry_date: string
+          id: string
+          recorded_at: string
+          sample_type: string
+          source: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          entry_date: string
+          id?: string
+          recorded_at?: string
+          sample_type: string
+          source: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          entry_date?: string
+          id?: string
+          recorded_at?: string
+          sample_type?: string
+          source?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
