@@ -4,12 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Heart, Moon, Activity, RefreshCw, Smartphone } from "lucide-react";
+import { ArrowLeft, Heart, Moon, Activity, RefreshCw, Smartphone, Unplug } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   getHealthPlatform,
   isHealthAvailable,
   requestHealthPermissions,
   syncHealthData,
+  disconnectHealth,
   getConnection,
   getTodayHealth,
   type TodayHealth,
@@ -67,6 +72,21 @@ const ConnectHealth = () => {
       await refresh();
     } catch (e: any) {
       toast({ title: "Sync failed", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!user) return;
+    setSyncing(true);
+    try {
+      await disconnectHealth(user.id);
+      toast({ title: "Disconnected", description: "Health access revoked and synced data cleared." });
+      setConnection(null);
+      setToday(null);
+    } catch (e: any) {
+      toast({ title: "Disconnect failed", description: e?.message ?? "Unknown error", variant: "destructive" });
     } finally {
       setSyncing(false);
     }
@@ -160,6 +180,26 @@ const ConnectHealth = () => {
                 <RefreshCw className={syncing ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"} />
                 {syncing ? "Syncing…" : "Sync Now"}
               </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" disabled={syncing} className="mt-2 w-full text-destructive hover:text-destructive">
+                    <Unplug className="mr-2 h-4 w-4" />
+                    Disconnect Health
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Disconnect {platformLabel}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This revokes access and deletes all synced health samples and connection info for your account. You'll need to reconnect to resume auto-fill. Permissions granted in iOS Settings must be revoked there as well.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDisconnect}>Disconnect</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           ) : (
             <Button onClick={handleConnect} disabled={syncing} className="h-14 w-full text-base font-semibold">
