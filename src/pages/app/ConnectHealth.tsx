@@ -4,12 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Heart, Moon, Activity, RefreshCw, Smartphone } from "lucide-react";
+import { ArrowLeft, Heart, Moon, Activity, RefreshCw, Smartphone, Unplug } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   getHealthPlatform,
   isHealthAvailable,
   requestHealthPermissions,
   syncHealthData,
+  disconnectHealth,
   getConnection,
   getTodayHealth,
   type TodayHealth,
