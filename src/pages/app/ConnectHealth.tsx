@@ -77,6 +77,21 @@ const ConnectHealth = () => {
     }
   };
 
+  const handleDisconnect = async () => {
+    if (!user) return;
+    setSyncing(true);
+    try {
+      await disconnectHealth(user.id);
+      toast({ title: "Disconnected", description: "Health access revoked and synced data cleared." });
+      setConnection(null);
+      setToday(null);
+    } catch (e: any) {
+      toast({ title: "Disconnect failed", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const platformLabel =
     platform === "HEALTHKIT" ? "Apple Health" : platform === "HEALTH_CONNECT" ? "Health Connect" : "Health";
 
