@@ -180,6 +180,26 @@ const ConnectHealth = () => {
                 <RefreshCw className={syncing ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"} />
                 {syncing ? "Syncing…" : "Sync Now"}
               </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" disabled={syncing} className="mt-2 w-full text-destructive hover:text-destructive">
+                    <Unplug className="mr-2 h-4 w-4" />
+                    Disconnect Health
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Disconnect {platformLabel}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This revokes access and deletes all synced health samples and connection info for your account. You'll need to reconnect to resume auto-fill. Permissions granted in iOS Settings must be revoked there as well.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDisconnect}>Disconnect</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           ) : (
             <Button onClick={handleConnect} disabled={syncing} className="h-14 w-full text-base font-semibold">
