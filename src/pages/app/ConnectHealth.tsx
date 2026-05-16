@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Heart, Moon, Activity, RefreshCw, Smartphone, Unplug } from "lucide-react";
+import { ArrowLeft, Heart, Moon, Activity, RefreshCw, Smartphone, Unplug, Settings, Square, CheckSquare } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -30,6 +30,16 @@ const ConnectHealth = () => {
   const [connection, setConnection] = useState<any>(null);
   const [today, setToday] = useState<TodayHealth | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [revokedSteps, setRevokedSteps] = useState<Record<string, boolean>>({});
+  const [showRevokeChecklist, setShowRevokeChecklist] = useState(false);
+
+  const REVOKE_STEPS = [
+    { id: "hrv", label: "Heart Rate Variability", icon: Heart },
+    { id: "sleep", label: "Sleep Analysis", icon: Moon },
+    { id: "rhr", label: "Resting Heart Rate", icon: Activity },
+  ];
+  const toggleStep = (id: string) =>
+    setRevokedSteps((s) => ({ ...s, [id]: !s[id] }));
 
   const refresh = async () => {
     if (!user) return;
@@ -85,6 +95,8 @@ const ConnectHealth = () => {
       toast({ title: "Disconnected", description: "Health access revoked and synced data cleared." });
       setConnection(null);
       setToday(null);
+      setRevokedSteps({});
+      setShowRevokeChecklist(platform === "HEALTHKIT");
     } catch (e: any) {
       toast({ title: "Disconnect failed", description: e?.message ?? "Unknown error", variant: "destructive" });
     } finally {
@@ -205,6 +217,53 @@ const ConnectHealth = () => {
             <Button onClick={handleConnect} disabled={syncing} className="h-14 w-full text-base font-semibold">
               {syncing ? "Connecting…" : "Connect Apple Health"}
             </Button>
+          )}
+
+          {(showRevokeChecklist || (!connection && platform === "HEALTHKIT")) && (
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="mb-1 flex items-center gap-2">
+                <Settings className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold text-foreground">Revoke in iOS Settings</h2>
+              </div>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Open <span className="font-medium text-foreground">Settings → Health → Data Access &amp; Devices → {platformLabel === "Apple Health" ? "morning-vibe-check" : platformLabel}</span> and turn off each toggle below. Tap each item once you've revoked it.
+              </p>
+              <ul className="space-y-1">
+                {REVOKE_STEPS.map(({ id, label, icon: Icon }) => {
+                  const done = !!revokedSteps[id];
+                  return (
+                    <li key={id}>
+                      <button
+                        type="button"
+                        onClick={() => toggleStep(id)}
+                        className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent"
+                      >
+                        {done ? (
+                          <CheckSquare className="h-4 w-4 shrink-0 text-primary" />
+                        ) : (
+                          <Square className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        )}
+                        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className={done ? "text-muted-foreground line-through" : "text-foreground"}>{label}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {REVOKE_STEPS.every((s) => revokedSteps[s.id]) && (
+                <p className="mt-3 text-xs font-medium text-primary">All permissions revoked. You're fully disconnected.</p>
+              )}
+            </div>
+          )}
+
+          {connection && (
+            <button
+              type="button"
+              onClick={() => setShowRevokeChecklist((v) => !v)}
+              className="w-full text-center text-xs text-muted-foreground underline"
+            >
+              {showRevokeChecklist ? "Hide" : "Show"} iOS revoke checklist
+            </button>
           )}
         </div>
       )}
