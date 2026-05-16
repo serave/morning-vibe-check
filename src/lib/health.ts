@@ -180,6 +180,13 @@ export const getTodayHealth = async (userId: string): Promise<TodayHealth> => {
   return out;
 };
 
+export const disconnectHealth = async (userId: string): Promise<void> => {
+  await Promise.all([
+    supabase.from("health_samples").delete().eq("user_id", userId),
+    supabase.from("health_connections").delete().eq("user_id", userId),
+  ]);
+};
+
 export const getConnection = async (userId: string) => {
   const { data } = await supabase
     .from("health_connections")
