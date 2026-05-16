@@ -218,6 +218,53 @@ const ConnectHealth = () => {
               {syncing ? "Connecting…" : "Connect Apple Health"}
             </Button>
           )}
+
+          {(showRevokeChecklist || (!connection && platform === "HEALTHKIT")) && (
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="mb-1 flex items-center gap-2">
+                <Settings className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold text-foreground">Revoke in iOS Settings</h2>
+              </div>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Open <span className="font-medium text-foreground">Settings → Health → Data Access &amp; Devices → {platformLabel === "Apple Health" ? "morning-vibe-check" : platformLabel}</span> and turn off each toggle below. Tap each item once you've revoked it.
+              </p>
+              <ul className="space-y-1">
+                {REVOKE_STEPS.map(({ id, label, icon: Icon }) => {
+                  const done = !!revokedSteps[id];
+                  return (
+                    <li key={id}>
+                      <button
+                        type="button"
+                        onClick={() => toggleStep(id)}
+                        className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent"
+                      >
+                        {done ? (
+                          <CheckSquare className="h-4 w-4 shrink-0 text-primary" />
+                        ) : (
+                          <Square className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        )}
+                        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className={done ? "text-muted-foreground line-through" : "text-foreground"}>{label}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {REVOKE_STEPS.every((s) => revokedSteps[s.id]) && (
+                <p className="mt-3 text-xs font-medium text-primary">All permissions revoked. You're fully disconnected.</p>
+              )}
+            </div>
+          )}
+
+          {connection && (
+            <button
+              type="button"
+              onClick={() => setShowRevokeChecklist((v) => !v)}
+              className="w-full text-center text-xs text-muted-foreground underline"
+            >
+              {showRevokeChecklist ? "Hide" : "Show"} iOS revoke checklist
+            </button>
+          )}
         </div>
       )}
     </div>
