@@ -95,6 +95,8 @@ const ConnectHealth = () => {
       toast({ title: "Disconnected", description: "Health access revoked and synced data cleared." });
       setConnection(null);
       setToday(null);
+      setRevokedSteps({});
+      setShowRevokeChecklist(platform === "HEALTHKIT");
     } catch (e: any) {
       toast({ title: "Disconnect failed", description: e?.message ?? "Unknown error", variant: "destructive" });
     } finally {
