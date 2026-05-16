@@ -30,6 +30,16 @@ const ConnectHealth = () => {
   const [connection, setConnection] = useState<any>(null);
   const [today, setToday] = useState<TodayHealth | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [revokedSteps, setRevokedSteps] = useState<Record<string, boolean>>({});
+  const [showRevokeChecklist, setShowRevokeChecklist] = useState(false);
+
+  const REVOKE_STEPS = [
+    { id: "hrv", label: "Heart Rate Variability", icon: Heart },
+    { id: "sleep", label: "Sleep Analysis", icon: Moon },
+    { id: "rhr", label: "Resting Heart Rate", icon: Activity },
+  ];
+  const toggleStep = (id: string) =>
+    setRevokedSteps((s) => ({ ...s, [id]: !s[id] }));
 
   const refresh = async () => {
     if (!user) return;
