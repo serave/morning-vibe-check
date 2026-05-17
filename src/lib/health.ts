@@ -130,25 +130,61 @@ const avgByDay = (
 const syncWorkouts = async (userId: string, source: string, startDate: Date, endDate: Date) => {
   const data = await queryHK<any>("workoutType", startDate, endDate);
   if (!data.length) return 0;
+
+  // Lookup user's max HR for zone calc
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("max_hr, birth_year")
+    .eq("id", userId)
+    .maybeSingle();
+  const maxHr = estimateMaxHr(profile?.birth_year, profile?.max_hr);
+
+  // Pull all HR samples in range once (cheaper than per-workout queries)
+  const hrAll = await queryHK<any>("heartRate", startDate, endDate);
+  const hrSamples = hrAll
+    .map((h: any) => ({
+      date: new Date(h.startDate ?? h.endDate),
+      bpm: Number(h.value ?? h.heartRate ?? 0),
+    }))
+    .filter((h: any) => h.bpm > 0 && !isNaN(h.date.getTime()));
+
   const rows = data
     .map((w: any) => {
       const start = w.startDate ?? w.start;
       const end = w.endDate ?? w.end ?? start;
       if (!start) return null;
-      const startISO = new Date(start).toISOString();
-      const endISO = new Date(end).toISOString();
+      const startDt = new Date(start);
+      const endDt = new Date(end);
       const dur = Number(w.duration ?? 0);
+      const durationMin = dur ? Math.round((dur / 60) * 10) / 10 : Math.max(0, (endDt.getTime() - startDt.getTime()) / 60000);
+
+      const inWindow = hrSamples.filter((s) => s.date >= startDt && s.date <= endDt);
+      const zones = zonesFromHrSamples(inWindow, maxHr, startDt, endDt);
+      const hasHr = inWindow.length > 0;
+      const bpms = inWindow.map((s) => s.bpm);
+      const avgHr = bpms.length ? bpms.reduce((a, b) => a + b, 0) / bpms.length : null;
+      const maxHrW = bpms.length ? Math.max(...bpms) : null;
+      const strain = hasHr ? strainFromZones(zones) : estimateStrainNoHr(durationMin);
+
       return {
         user_id: userId,
         source,
         external_id: w.uuid ?? null,
         activity_type: w.workoutActivityName ?? w.workoutActivityType ?? w.activityType ?? "unknown",
-        start_at: startISO,
-        end_at: endISO,
-        duration_min: dur ? Math.round((dur / 60) * 10) / 10 : null,
+        start_at: startDt.toISOString(),
+        end_at: endDt.toISOString(),
+        duration_min: Math.round(durationMin * 10) / 10 || null,
         energy_kcal: Number(w.totalEnergyBurned ?? w.energy ?? 0) || null,
         distance_m: Number(w.totalDistance ?? w.distance ?? 0) || null,
-        entry_date: format(new Date(start), "yyyy-MM-dd"),
+        entry_date: format(startDt, "yyyy-MM-dd"),
+        avg_hr: avgHr ? Math.round(avgHr) : null,
+        max_hr: maxHrW ? Math.round(maxHrW) : null,
+        zone1_min: Math.round(zones.z1 * 10) / 10,
+        zone2_min: Math.round(zones.z2 * 10) / 10,
+        zone3_min: Math.round(zones.z3 * 10) / 10,
+        zone4_min: Math.round(zones.z4 * 10) / 10,
+        zone5_min: Math.round(zones.z5 * 10) / 10,
+        strain,
       };
     })
     .filter(Boolean);
