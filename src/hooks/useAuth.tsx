@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { seedPresetTags } from "@/lib/tags";
+import { startBackgroundSync, stopBackgroundSync } from "@/lib/health";
 import { useNavigate } from "react-router-dom";
 
 interface AuthContextType {
@@ -23,6 +24,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
         seedPresetTags(session.user.id).catch(console.error);
+        startBackgroundSync(session.user.id).catch(console.error);
+      }
+      if (event === 'SIGNED_OUT') {
+        stopBackgroundSync();
       }
     });
 

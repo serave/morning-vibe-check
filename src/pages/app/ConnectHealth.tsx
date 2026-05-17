@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Heart, Moon, Activity, RefreshCw, Smartphone, Unplug, Settings, Square, CheckSquare } from "lucide-react";
+import { ArrowLeft, Heart, Moon, Activity, RefreshCw, Smartphone, Unplug, Settings, Square, CheckSquare, Wind, Droplets, Thermometer, Dumbbell } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -37,6 +37,10 @@ const ConnectHealth = () => {
     { id: "hrv", label: "Heart Rate Variability", icon: Heart },
     { id: "sleep", label: "Sleep Analysis", icon: Moon },
     { id: "rhr", label: "Resting Heart Rate", icon: Activity },
+    { id: "resp", label: "Respiratory Rate", icon: Wind },
+    { id: "spo2", label: "Blood Oxygen (SpO₂)", icon: Droplets },
+    { id: "skin", label: "Wrist Temperature", icon: Thermometer },
+    { id: "workouts", label: "Workouts", icon: Dumbbell },
   ];
   const toggleStep = (id: string) =>
     setRevokedSteps((s) => ({ ...s, [id]: !s[id] }));
@@ -115,7 +119,7 @@ const ConnectHealth = () => {
 
       <h1 className="text-xl font-bold text-foreground">Connect {platformLabel}</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Auto-import HRV, sleep, and resting heart rate so check-ins fill in for you.
+        Auto-import HRV, sleep stages, resting HR, respiratory rate, SpO₂, wrist temp & workouts. Syncs in the background whenever the app opens.
       </p>
 
       {!platform && (
@@ -150,11 +154,18 @@ const ConnectHealth = () => {
         <div className="mt-6 space-y-4">
           <div className="rounded-lg bg-card p-4">
             <h2 className="mb-3 text-sm font-semibold text-foreground">What we read</h2>
-            <ul className="space-y-2 text-sm text-muted-foreground">
+            <ul className="grid grid-cols-2 gap-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2"><Heart className="h-4 w-4 text-primary" /> HRV (RMSSD)</li>
-              <li className="flex items-center gap-2"><Moon className="h-4 w-4 text-primary" /> Sleep duration</li>
-              <li className="flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Resting heart rate</li>
+              <li className="flex items-center gap-2"><Moon className="h-4 w-4 text-primary" /> Sleep + stages</li>
+              <li className="flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Resting HR</li>
+              <li className="flex items-center gap-2"><Wind className="h-4 w-4 text-primary" /> Respiratory rate</li>
+              <li className="flex items-center gap-2"><Droplets className="h-4 w-4 text-primary" /> SpO₂</li>
+              <li className="flex items-center gap-2"><Thermometer className="h-4 w-4 text-primary" /> Wrist temp</li>
+              <li className="flex items-center gap-2"><Dumbbell className="h-4 w-4 text-primary" /> Workouts</li>
             </ul>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Syncs automatically when you open the app and every time it returns to the foreground.
+            </p>
           </div>
 
           {connection ? (
