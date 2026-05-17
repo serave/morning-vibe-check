@@ -287,11 +287,12 @@ export const syncHealthData = async (userId: string, daysBack = 7): Promise<Sync
       .upsert(rows, { onConflict: "user_id,sample_type,entry_date,source" });
   }
 
-  // Workouts
+  // Workouts + daily strain
   try {
     await syncWorkouts(userId, platform, startDate, endDate);
+    await updateTodayStrain(userId);
   } catch (e) {
-    console.warn("Workout sync failed", e);
+    console.warn("Workout/strain sync failed", e);
   }
 
   await supabase.from("health_connections").upsert(
