@@ -117,6 +117,7 @@ export type Database = {
           source_hrv: string | null
           source_sleep: string | null
           sport: string | null
+          strain_score: number | null
           trained_yesterday: boolean | null
           training_duration_min: number | null
           training_intensity: number | null
@@ -147,6 +148,7 @@ export type Database = {
           source_hrv?: string | null
           source_sleep?: string | null
           sport?: string | null
+          strain_score?: number | null
           trained_yesterday?: boolean | null
           training_duration_min?: number | null
           training_intensity?: number | null
@@ -177,6 +179,7 @@ export type Database = {
           source_hrv?: string | null
           source_sleep?: string | null
           sport?: string | null
+          strain_score?: number | null
           trained_yesterday?: boolean | null
           training_duration_min?: number | null
           training_intensity?: number | null
@@ -261,6 +264,7 @@ export type Database = {
       health_workouts: {
         Row: {
           activity_type: string | null
+          avg_hr: number | null
           created_at: string
           distance_m: number | null
           duration_min: number | null
@@ -269,12 +273,20 @@ export type Database = {
           entry_date: string
           external_id: string | null
           id: string
+          max_hr: number | null
           source: string
           start_at: string
+          strain: number | null
           user_id: string
+          zone1_min: number | null
+          zone2_min: number | null
+          zone3_min: number | null
+          zone4_min: number | null
+          zone5_min: number | null
         }
         Insert: {
           activity_type?: string | null
+          avg_hr?: number | null
           created_at?: string
           distance_m?: number | null
           duration_min?: number | null
@@ -283,12 +295,20 @@ export type Database = {
           entry_date: string
           external_id?: string | null
           id?: string
+          max_hr?: number | null
           source: string
           start_at: string
+          strain?: number | null
           user_id: string
+          zone1_min?: number | null
+          zone2_min?: number | null
+          zone3_min?: number | null
+          zone4_min?: number | null
+          zone5_min?: number | null
         }
         Update: {
           activity_type?: string | null
+          avg_hr?: number | null
           created_at?: string
           distance_m?: number | null
           duration_min?: number | null
@@ -297,39 +317,52 @@ export type Database = {
           entry_date?: string
           external_id?: string | null
           id?: string
+          max_hr?: number | null
           source?: string
           start_at?: string
+          strain?: number | null
           user_id?: string
+          zone1_min?: number | null
+          zone2_min?: number | null
+          zone3_min?: number | null
+          zone4_min?: number | null
+          zone5_min?: number | null
         }
         Relationships: []
       }
       profiles: {
         Row: {
+          birth_year: number | null
           created_at: string | null
           first_name: string | null
           id: string
           last_name: string | null
           longest_streak: number | null
+          max_hr: number | null
           sport_type: string | null
           streak_count: number | null
           timezone: string | null
         }
         Insert: {
+          birth_year?: number | null
           created_at?: string | null
           first_name?: string | null
           id: string
           last_name?: string | null
           longest_streak?: number | null
+          max_hr?: number | null
           sport_type?: string | null
           streak_count?: number | null
           timezone?: string | null
         }
         Update: {
+          birth_year?: number | null
           created_at?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
           longest_streak?: number | null
+          max_hr?: number | null
           sport_type?: string | null
           streak_count?: number | null
           timezone?: string | null

@@ -15,10 +15,25 @@ interface ResultsProps {
     lowest_factor: string | null;
     baseline_phase: string | null;
     hrv_deviation?: number | null;
+    strain_score?: number | null;
     notes: string | null;
   };
   streakCount: number;
 }
+
+const getStrainColor = (s: number): string => {
+  if (s < 8) return "#34D399";
+  if (s < 14) return "#FBBF24";
+  if (s < 18) return "#FB923C";
+  return "#F87171";
+};
+
+const getStrainLabel = (s: number): string => {
+  if (s < 8) return "Light";
+  if (s < 14) return "Moderate";
+  if (s < 18) return "Strenuous";
+  return "All-Out";
+};
 
 const getZoneColor = (score: number | null): string => {
   if (score == null) return "#888";
@@ -116,6 +131,32 @@ const Results = ({ checkin, streakCount }: ResultsProps) => {
           <p className="mt-1 text-sm text-muted-foreground">{rec.context}</p>
         </div>
       )}
+
+      {/* Day Strain (0–21) */}
+      {checkin.strain_score != null && Number(checkin.strain_score) > 0 && (() => {
+        const s = Number(checkin.strain_score);
+        const c = getStrainColor(s);
+        return (
+          <div className="rounded-lg bg-card p-4">
+            <div className="mb-2 flex items-baseline justify-between">
+              <span className="text-sm font-semibold text-foreground">⚡ Day Strain</span>
+              <span className="text-xs text-muted-foreground">{getStrainLabel(s)}</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold tabular-nums" style={{ color: c }}>
+                {s.toFixed(1)}
+              </span>
+              <span className="text-xs text-muted-foreground">/ 21</span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{ width: `${(s / 21) * 100}%`, backgroundColor: c }}
+              />
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 3. Illness banner */}
       {checkin.feeling === 1 && (
