@@ -15,10 +15,25 @@ interface ResultsProps {
     lowest_factor: string | null;
     baseline_phase: string | null;
     hrv_deviation?: number | null;
+    strain_score?: number | null;
     notes: string | null;
   };
   streakCount: number;
 }
+
+const getStrainColor = (s: number): string => {
+  if (s < 8) return "#34D399";
+  if (s < 14) return "#FBBF24";
+  if (s < 18) return "#FB923C";
+  return "#F87171";
+};
+
+const getStrainLabel = (s: number): string => {
+  if (s < 8) return "Light";
+  if (s < 14) return "Moderate";
+  if (s < 18) return "Strenuous";
+  return "All-Out";
+};
 
 const getZoneColor = (score: number | null): string => {
   if (score == null) return "#888";
