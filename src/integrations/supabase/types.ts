@@ -258,6 +258,51 @@ export type Database = {
         }
         Relationships: []
       }
+      health_workouts: {
+        Row: {
+          activity_type: string | null
+          created_at: string
+          distance_m: number | null
+          duration_min: number | null
+          end_at: string
+          energy_kcal: number | null
+          entry_date: string
+          external_id: string | null
+          id: string
+          source: string
+          start_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_type?: string | null
+          created_at?: string
+          distance_m?: number | null
+          duration_min?: number | null
+          end_at: string
+          energy_kcal?: number | null
+          entry_date: string
+          external_id?: string | null
+          id?: string
+          source: string
+          start_at: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string | null
+          created_at?: string
+          distance_m?: number | null
+          duration_min?: number | null
+          end_at?: string
+          energy_kcal?: number | null
+          entry_date?: string
+          external_id?: string | null
+          id?: string
+          source?: string
+          start_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
