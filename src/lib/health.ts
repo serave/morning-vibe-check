@@ -23,6 +23,7 @@ const READ_PERMISSIONS = [
   "oxygenSaturation",
   "appleSleepingWristTemperature",
   "workoutType",
+  "heartRate",
 ];
 
 export type HealthSampleType =
