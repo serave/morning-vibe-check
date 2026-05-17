@@ -132,6 +132,32 @@ const Results = ({ checkin, streakCount }: ResultsProps) => {
         </div>
       )}
 
+      {/* Day Strain (0–21) */}
+      {checkin.strain_score != null && Number(checkin.strain_score) > 0 && (() => {
+        const s = Number(checkin.strain_score);
+        const c = getStrainColor(s);
+        return (
+          <div className="rounded-lg bg-card p-4">
+            <div className="mb-2 flex items-baseline justify-between">
+              <span className="text-sm font-semibold text-foreground">⚡ Day Strain</span>
+              <span className="text-xs text-muted-foreground">{getStrainLabel(s)}</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold tabular-nums" style={{ color: c }}>
+                {s.toFixed(1)}
+              </span>
+              <span className="text-xs text-muted-foreground">/ 21</span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{ width: `${(s / 21) * 100}%`, backgroundColor: c }}
+              />
+            </div>
+          </div>
+        );
+      })()}
+
       {/* 3. Illness banner */}
       {checkin.feeling === 1 && (
         <div className="rounded-lg bg-[#F87171]/15 px-4 py-3">
