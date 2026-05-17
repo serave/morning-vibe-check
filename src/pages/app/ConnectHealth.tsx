@@ -119,7 +119,7 @@ const ConnectHealth = () => {
 
       <h1 className="text-xl font-bold text-foreground">Connect {platformLabel}</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Auto-import HRV, sleep, and resting heart rate so check-ins fill in for you.
+        Auto-import HRV, sleep stages, resting HR, respiratory rate, SpO₂, wrist temp & workouts. Syncs in the background whenever the app opens.
       </p>
 
       {!platform && (
