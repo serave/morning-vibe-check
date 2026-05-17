@@ -3,6 +3,13 @@ import { App } from "@capacitor/app";
 import { CapacitorHealthkit, type QueryOutput } from "@perfood/capacitor-healthkit";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays } from "date-fns";
+import {
+  estimateMaxHr,
+  zonesFromHrSamples,
+  strainFromZones,
+  estimateStrainNoHr,
+  updateTodayStrain,
+} from "@/lib/strain";
 
 export type HealthPlatform = "HEALTHKIT" | "HEALTH_CONNECT" | null;
 
