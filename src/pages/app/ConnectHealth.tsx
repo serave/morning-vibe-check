@@ -37,6 +37,10 @@ const ConnectHealth = () => {
     { id: "hrv", label: "Heart Rate Variability", icon: Heart },
     { id: "sleep", label: "Sleep Analysis", icon: Moon },
     { id: "rhr", label: "Resting Heart Rate", icon: Activity },
+    { id: "resp", label: "Respiratory Rate", icon: Wind },
+    { id: "spo2", label: "Blood Oxygen (SpO₂)", icon: Droplets },
+    { id: "skin", label: "Wrist Temperature", icon: Thermometer },
+    { id: "workouts", label: "Workouts", icon: Dumbbell },
   ];
   const toggleStep = (id: string) =>
     setRevokedSteps((s) => ({ ...s, [id]: !s[id] }));
