@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Heart, Moon, Activity, RefreshCw, Smartphone, Unplug, Settings, Square, CheckSquare } from "lucide-react";
+import { ArrowLeft, Heart, Moon, Activity, RefreshCw, Smartphone, Unplug, Settings, Square, CheckSquare, Wind, Droplets, Thermometer, Dumbbell } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
