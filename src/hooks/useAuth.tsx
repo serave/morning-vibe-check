@@ -24,6 +24,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
         seedPresetTags(session.user.id).catch(console.error);
+        startBackgroundSync(session.user.id).catch(console.error);
+      }
+      if (event === 'SIGNED_OUT') {
+        stopBackgroundSync();
       }
     });
 
