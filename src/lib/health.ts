@@ -327,6 +327,7 @@ export interface TodayHealth {
   skin_temp_delta: number | null;
   sleep_deep_hours: number | null;
   sleep_rem_hours: number | null;
+  vo2_max: number | null;
   source: string | null;
 }
 
