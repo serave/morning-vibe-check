@@ -306,6 +306,11 @@ const Results = ({ checkin, streakCount }: ResultsProps) => {
         );
       })()}
 
+      {/* Workout & zone breakdown */}
+      {user && <WorkoutZoneBreakdown userId={user.id} date={checkin.entry_date} />}
+
+
+
       {/* 3. Illness banner */}
       {checkin.feeling === 1 && (
         <div className="rounded-lg bg-[#F87171]/15 px-4 py-3">
