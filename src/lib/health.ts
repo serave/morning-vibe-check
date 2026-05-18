@@ -282,6 +282,14 @@ export const syncHealthData = async (userId: string, daysBack = 7): Promise<Sync
     ...avgByDay(skinData, "skin_temp_delta", (d) => Number(d.value ?? d.appleSleepingWristTemperature ?? 0), 2)
   );
 
+  // VO2 Max — Apple writes ~1 reading/week. Pull a wider window so the trend
+  // chart has enough points even when daysBack is small.
+  const vo2Start = subDays(endDate, Math.max(daysBack, 365));
+  const vo2Data = await queryHK<any>("vo2Max", vo2Start, endDate);
+  samples.push(
+    ...avgByDay(vo2Data, "vo2_max", (d) => Number(d.value ?? d.vo2Max ?? 0), 1)
+  );
+
   if (samples.length > 0) {
     const rows = samples.map((s) => ({ ...s, user_id: userId, source: platform }));
     await supabase
