@@ -22,6 +22,7 @@ const READ_PERMISSIONS = [
   "respiratoryRate",
   "oxygenSaturation",
   "appleSleepingWristTemperature",
+  "vo2Max",
   "workoutType",
   "heartRate",
 ];
@@ -36,7 +37,8 @@ export type HealthSampleType =
   | "resting_hr"
   | "respiratory_rate"
   | "spo2"
-  | "skin_temp_delta";
+  | "skin_temp_delta"
+  | "vo2_max";
 
 export const getHealthPlatform = (): HealthPlatform => {
   if (!Capacitor.isNativePlatform()) return null;
