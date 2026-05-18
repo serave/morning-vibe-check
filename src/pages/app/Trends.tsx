@@ -56,6 +56,7 @@ const Trends = () => {
   const { user } = useAuth();
   const [period, setPeriod] = useState<Period>("1M");
   const [rawData, setRawData] = useState<any[]>([]);
+  const [vo2Data, setVo2Data] = useState<{ entry_date: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -68,17 +69,30 @@ const Trends = () => {
       .eq("user_id", user.id)
       .order("entry_date", { ascending: true });
 
+    // VO2 max is sparse (~weekly) — always pull at least 1 year so the chart
+    // shows a meaningful trend even on the 7D view.
     const days = periodDays(period);
+    const vo2Cutoff = format(subDays(new Date(), Math.max(days ?? 365, 365)), "yyyy-MM-dd");
+    const vo2Query = supabase
+      .from("health_samples")
+      .select("entry_date, value")
+      .eq("user_id", user.id)
+      .eq("sample_type", "vo2_max")
+      .gte("entry_date", vo2Cutoff)
+      .order("entry_date", { ascending: true });
+
     if (days) {
       const cutoff = format(subDays(new Date(), days), "yyyy-MM-dd");
       query = query.gte("entry_date", cutoff);
     }
 
-    query.then(({ data: rows }) => {
-      setRawData(rows ?? []);
+    Promise.all([query, vo2Query]).then(([checkinRes, vo2Res]) => {
+      setRawData(checkinRes.data ?? []);
+      setVo2Data(((vo2Res.data ?? []) as any[]).map((r) => ({ entry_date: r.entry_date, value: Number(r.value) })));
       setLoading(false);
     });
   }, [user, period]);
+
 
   const data = useMemo(() => {
     const recoveries = rawData.map((r) => r.recovery_score as number | null);
