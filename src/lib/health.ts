@@ -22,6 +22,7 @@ const READ_PERMISSIONS = [
   "respiratoryRate",
   "oxygenSaturation",
   "appleSleepingWristTemperature",
+  "vo2Max",
   "workoutType",
   "heartRate",
 ];
@@ -36,7 +37,8 @@ export type HealthSampleType =
   | "resting_hr"
   | "respiratory_rate"
   | "spo2"
-  | "skin_temp_delta";
+  | "skin_temp_delta"
+  | "vo2_max";
 
 export const getHealthPlatform = (): HealthPlatform => {
   if (!Capacitor.isNativePlatform()) return null;
@@ -280,6 +282,14 @@ export const syncHealthData = async (userId: string, daysBack = 7): Promise<Sync
     ...avgByDay(skinData, "skin_temp_delta", (d) => Number(d.value ?? d.appleSleepingWristTemperature ?? 0), 2)
   );
 
+  // VO2 Max — Apple writes ~1 reading/week. Pull a wider window so the trend
+  // chart has enough points even when daysBack is small.
+  const vo2Start = subDays(endDate, Math.max(daysBack, 365));
+  const vo2Data = await queryHK<any>("vo2Max", vo2Start, endDate);
+  samples.push(
+    ...avgByDay(vo2Data, "vo2_max", (d) => Number(d.value ?? d.vo2Max ?? 0), 1)
+  );
+
   if (samples.length > 0) {
     const rows = samples.map((s) => ({ ...s, user_id: userId, source: platform }));
     await supabase
@@ -317,6 +327,7 @@ export interface TodayHealth {
   skin_temp_delta: number | null;
   sleep_deep_hours: number | null;
   sleep_rem_hours: number | null;
+  vo2_max: number | null;
   source: string | null;
 }
 
@@ -331,7 +342,7 @@ export const getTodayHealth = async (userId: string): Promise<TodayHealth> => {
   const out: TodayHealth = {
     hrv_rmssd: null, sleep_hours: null, resting_hr: null,
     respiratory_rate: null, spo2: null, skin_temp_delta: null,
-    sleep_deep_hours: null, sleep_rem_hours: null, source: null,
+    sleep_deep_hours: null, sleep_rem_hours: null, vo2_max: null, source: null,
   };
   for (const row of data ?? []) {
     out.source = row.source;

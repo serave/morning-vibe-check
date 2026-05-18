@@ -56,6 +56,7 @@ const Trends = () => {
   const { user } = useAuth();
   const [period, setPeriod] = useState<Period>("1M");
   const [rawData, setRawData] = useState<any[]>([]);
+  const [vo2Data, setVo2Data] = useState<{ entry_date: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -68,17 +69,30 @@ const Trends = () => {
       .eq("user_id", user.id)
       .order("entry_date", { ascending: true });
 
+    // VO2 max is sparse (~weekly) — always pull at least 1 year so the chart
+    // shows a meaningful trend even on the 7D view.
     const days = periodDays(period);
+    const vo2Cutoff = format(subDays(new Date(), Math.max(days ?? 365, 365)), "yyyy-MM-dd");
+    const vo2Query = supabase
+      .from("health_samples")
+      .select("entry_date, value")
+      .eq("user_id", user.id)
+      .eq("sample_type", "vo2_max")
+      .gte("entry_date", vo2Cutoff)
+      .order("entry_date", { ascending: true });
+
     if (days) {
       const cutoff = format(subDays(new Date(), days), "yyyy-MM-dd");
       query = query.gte("entry_date", cutoff);
     }
 
-    query.then(({ data: rows }) => {
-      setRawData(rows ?? []);
+    Promise.all([query, vo2Query]).then(([checkinRes, vo2Res]) => {
+      setRawData(checkinRes.data ?? []);
+      setVo2Data(((vo2Res.data ?? []) as any[]).map((r) => ({ entry_date: r.entry_date, value: Number(r.value) })));
       setLoading(false);
     });
   }, [user, period]);
+
 
   const data = useMemo(() => {
     const recoveries = rawData.map((r) => r.recovery_score as number | null);
@@ -245,7 +259,75 @@ const Trends = () => {
           </LineChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Cardio Fitness (VO2 Max) */}
+      {vo2Data.length > 0 && (() => {
+        const sorted = [...vo2Data].sort((a, b) => a.entry_date.localeCompare(b.entry_date));
+        const latest = sorted[sorted.length - 1];
+        const ninetyAgo = format(subDays(new Date(), 90), "yyyy-MM-dd");
+        const baselineSamples = sorted.filter((s) => s.entry_date < ninetyAgo);
+        const baseline = baselineSamples.length
+          ? baselineSamples[baselineSamples.length - 1].value
+          : sorted[0].value;
+        const delta = latest.value - baseline;
+        const trendColor = delta > 0.5 ? "#34D399" : delta < -0.5 ? "#F87171" : "#FBBF24";
+        const trendLabel = delta > 0.5 ? "Improving" : delta < -0.5 ? "Declining" : "Stable";
+        const category =
+          latest.value >= 50 ? "Superior" :
+          latest.value >= 42 ? "Excellent" :
+          latest.value >= 36 ? "Above Avg" :
+          latest.value >= 30 ? "Average" :
+          latest.value >= 25 ? "Below Avg" : "Low";
+
+        const chartData = sorted.map((s) => ({
+          date: format(new Date(s.entry_date + "T00:00:00"), "M/d"),
+          vo2: s.value,
+        }));
+
+        return (
+          <div className="rounded-lg bg-card p-4">
+            <div className="mb-2 flex items-baseline justify-between">
+              <h2 className="text-sm font-semibold text-foreground">🫀 Cardio Fitness</h2>
+              <span className="text-xs text-muted-foreground">VO₂ max · ml/kg/min</span>
+            </div>
+            <div className="mb-3 flex items-baseline gap-3">
+              <span className="text-3xl font-bold tabular-nums text-foreground">
+                {latest.value.toFixed(1)}
+              </span>
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-foreground">
+                {category}
+              </span>
+              <span className="text-xs tabular-nums" style={{ color: trendColor }}>
+                {delta > 0 ? "▲" : delta < 0 ? "▼" : "■"} {Math.abs(delta).toFixed(1)} · {trendLabel} (90d)
+              </span>
+            </div>
+            {chartData.length >= 2 ? (
+              <ResponsiveContainer width="100%" height={180}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                  <XAxis dataKey="date" tick={tickStyle} minTickGap={20} />
+                  <YAxis domain={["dataMin - 2", "dataMax + 2"]} tick={tickStyle} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Line
+                    type="monotone"
+                    dataKey="vo2"
+                    stroke="#3F8BFF"
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: "#3F8BFF" }}
+                    name="VO₂ max"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Need more readings to chart a trend. Apple Watch typically records VO₂ max during outdoor walks/runs.
+              </p>
+            )}
+          </div>
+        );
+      })()}
     </div>
+
   );
 };
 
