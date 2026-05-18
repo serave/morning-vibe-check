@@ -230,6 +230,7 @@ const ScoreBar = ({
 };
 
 const Results = ({ checkin, streakCount }: ResultsProps) => {
+  const { user } = useAuth();
   const score = checkin.recovery_score;
   const phase = checkin.baseline_phase;
   const zoneColor = getZoneColor(score);
