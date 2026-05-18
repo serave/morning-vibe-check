@@ -1,4 +1,151 @@
 import { format } from "date-fns";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+
+interface Workout {
+  id: string;
+  activity_type: string | null;
+  start_at: string;
+  duration_min: number | null;
+  avg_hr: number | null;
+  max_hr: number | null;
+  strain: number | null;
+  zone1_min: number | null;
+  zone2_min: number | null;
+  zone3_min: number | null;
+  zone4_min: number | null;
+  zone5_min: number | null;
+}
+
+const ZONE_META = [
+  { key: "zone1_min", label: "Z1", desc: "Recovery (<60% max HR)", color: "#9CA3AF", weight: "×1" },
+  { key: "zone2_min", label: "Z2", desc: "Endurance (60–70%)", color: "#34D399", weight: "×2" },
+  { key: "zone3_min", label: "Z3", desc: "Tempo (70–80%)", color: "#FBBF24", weight: "×3" },
+  { key: "zone4_min", label: "Z4", desc: "Threshold (80–90%)", color: "#FB923C", weight: "×4" },
+  { key: "zone5_min", label: "Z5", desc: "Max (>90%)", color: "#F87171", weight: "×5" },
+] as const;
+
+const WorkoutZoneBreakdown = ({ userId, date }: { userId: string; date: string }) => {
+  const [workouts, setWorkouts] = useState<Workout[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("health_workouts")
+        .select("id, activity_type, start_at, duration_min, avg_hr, max_hr, strain, zone1_min, zone2_min, zone3_min, zone4_min, zone5_min")
+        .eq("user_id", userId)
+        .eq("entry_date", date)
+        .order("start_at", { ascending: true });
+      if (!cancelled) setWorkouts((data as Workout[]) ?? []);
+    })();
+    return () => { cancelled = true; };
+  }, [userId, date]);
+
+  if (!workouts || workouts.length === 0) return null;
+
+  // Aggregate totals
+  const totals = ZONE_META.map((z) => ({
+    ...z,
+    min: workouts.reduce((s, w) => s + (Number(w[z.key as keyof Workout]) || 0), 0),
+  }));
+  const totalMin = totals.reduce((s, z) => s + z.min, 0);
+  const weightedLoad = totals.reduce((s, z, i) => s + z.min * (i + 1), 0);
+
+  return (
+    <div className="rounded-lg bg-card p-4">
+      <h2 className="mb-1 text-sm font-semibold text-foreground">Strain Breakdown</h2>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Time in each HR zone is weighted (Z1×1 → Z5×5) and mapped through a logarithmic curve to a 0–21 score.
+      </p>
+
+      {/* Stacked zone bar */}
+      {totalMin > 0 && (
+        <>
+          <div className="mb-2 flex h-3 overflow-hidden rounded-full bg-secondary">
+            {totals.map((z) =>
+              z.min > 0 ? (
+                <div
+                  key={z.key}
+                  style={{ width: `${(z.min / totalMin) * 100}%`, backgroundColor: z.color }}
+                  title={`${z.label}: ${z.min.toFixed(0)} min`}
+                />
+              ) : null,
+            )}
+          </div>
+          <div className="mb-4 space-y-1">
+            {totals.map((z) => (
+              <div key={z.key} className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: z.color }} />
+                  <span className="font-medium text-foreground">{z.label}</span>
+                  <span className="text-muted-foreground">{z.desc}</span>
+                </span>
+                <span className="flex items-center gap-2 tabular-nums text-muted-foreground">
+                  <span>{z.min.toFixed(0)} min</span>
+                  <span className="w-6 text-right">{z.weight}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="mb-4 flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2 text-xs">
+            <span className="text-muted-foreground">Weighted load</span>
+            <span className="font-medium tabular-nums text-foreground">
+              {weightedLoad.toFixed(0)} pts → strain {(21 * (1 - Math.exp(-weightedLoad / 70))).toFixed(1)}
+            </span>
+          </div>
+        </>
+      )}
+
+      {/* Per-workout list */}
+      <div className="space-y-2">
+        {workouts.map((w) => {
+          const wTotalMin = ZONE_META.reduce((s, z) => s + (Number(w[z.key as keyof Workout]) || 0), 0);
+          return (
+            <div key={w.id} className="rounded-md border border-border/50 p-3">
+              <div className="mb-2 flex items-baseline justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {w.activity_type || "Workout"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {format(new Date(w.start_at), "h:mm a")} · {Math.round(Number(w.duration_min) || 0)} min
+                    {w.avg_hr ? ` · avg ${Math.round(Number(w.avg_hr))} bpm` : ""}
+                    {w.max_hr ? ` · max ${Math.round(Number(w.max_hr))} bpm` : ""}
+                  </p>
+                </div>
+                {w.strain != null && (
+                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                    {Number(w.strain).toFixed(1)}
+                  </span>
+                )}
+              </div>
+              {wTotalMin > 0 ? (
+                <div className="flex h-2 overflow-hidden rounded-full bg-secondary">
+                  {ZONE_META.map((z) => {
+                    const m = Number(w[z.key as keyof Workout]) || 0;
+                    return m > 0 ? (
+                      <div
+                        key={z.key}
+                        style={{ width: `${(m / wTotalMin) * 100}%`, backgroundColor: z.color }}
+                        title={`${z.label}: ${m.toFixed(0)} min`}
+                      />
+                    ) : null;
+                  })}
+                </div>
+              ) : (
+                <p className="text-[10px] italic text-muted-foreground">
+                  No HR data — strain estimated from duration.
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 interface ResultsProps {
   checkin: {
@@ -83,6 +230,7 @@ const ScoreBar = ({
 };
 
 const Results = ({ checkin, streakCount }: ResultsProps) => {
+  const { user } = useAuth();
   const score = checkin.recovery_score;
   const phase = checkin.baseline_phase;
   const zoneColor = getZoneColor(score);
@@ -157,6 +305,11 @@ const Results = ({ checkin, streakCount }: ResultsProps) => {
           </div>
         );
       })()}
+
+      {/* Workout & zone breakdown */}
+      {user && <WorkoutZoneBreakdown userId={user.id} date={checkin.entry_date} />}
+
+
 
       {/* 3. Illness banner */}
       {checkin.feeling === 1 && (
