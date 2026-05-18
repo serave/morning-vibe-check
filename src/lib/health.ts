@@ -342,7 +342,7 @@ export const getTodayHealth = async (userId: string): Promise<TodayHealth> => {
   const out: TodayHealth = {
     hrv_rmssd: null, sleep_hours: null, resting_hr: null,
     respiratory_rate: null, spo2: null, skin_temp_delta: null,
-    sleep_deep_hours: null, sleep_rem_hours: null, source: null,
+    sleep_deep_hours: null, sleep_rem_hours: null, vo2_max: null, source: null,
   };
   for (const row of data ?? []) {
     out.source = row.source;
