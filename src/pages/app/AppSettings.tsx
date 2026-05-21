@@ -226,6 +226,48 @@ const AppSettings = () => {
           </button>
         </div>
 
+        {/* Activity Ring Goals */}
+        <div className="rounded-lg bg-card p-4">
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Activity Ring Goals</h2>
+          <div className="flex flex-col gap-3">
+            <label className="text-xs text-muted-foreground">
+              Daily steps
+              <Input
+                type="number"
+                min={0}
+                value={stepsGoal}
+                onChange={(e) => setStepsGoal(Number(e.target.value) || 0)}
+                className="mt-1 h-12 rounded-sm bg-secondary"
+              />
+            </label>
+            <label className="text-xs text-muted-foreground">
+              Active energy (kcal)
+              <Input
+                type="number"
+                min={0}
+                value={activeEnergyGoal}
+                onChange={(e) => setActiveEnergyGoal(Number(e.target.value) || 0)}
+                className="mt-1 h-12 rounded-sm bg-secondary"
+              />
+            </label>
+            <label className="text-xs text-muted-foreground">
+              Stand hours
+              <Input
+                type="number"
+                min={0}
+                max={24}
+                value={standGoal}
+                onChange={(e) => setStandGoal(Number(e.target.value) || 0)}
+                className="mt-1 h-12 rounded-sm bg-secondary"
+              />
+            </label>
+            <Button onClick={handleSave} disabled={saving} className="h-12 rounded-sm">
+              {saving ? "Saving…" : "Save Goals"}
+            </Button>
+          </div>
+        </div>
+
+
         {/* Data Export */}
         <div className="rounded-lg bg-card p-4">
           <h2 className="mb-3 text-sm font-semibold text-foreground">Data</h2>
