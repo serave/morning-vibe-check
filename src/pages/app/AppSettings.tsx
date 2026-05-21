@@ -30,6 +30,9 @@ const AppSettings = () => {
   const [lastName, setLastName] = useState("");
   const [sportType, setSportType] = useState("");
   const [timezone, setTimezone] = useState("America/New_York");
+  const [stepsGoal, setStepsGoal] = useState(10000);
+  const [activeEnergyGoal, setActiveEnergyGoal] = useState(500);
+  const [standGoal, setStandGoal] = useState(12);
   const [saving, setSaving] = useState(false);
 
   // Change password
