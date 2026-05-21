@@ -319,6 +319,34 @@ export const syncHealthData = async (userId: string, daysBack = 7): Promise<Sync
     ...avgByDay(vo2Data, "vo2_max", (d) => Number(d.value ?? d.vo2Max ?? 0), 1)
   );
 
+  // Steps (sum per day)
+  const stepsData = await queryHK<any>("stepCount", startDate, endDate);
+  samples.push(...sumByDay(stepsData, "steps", (d) => Number(d.value ?? d.quantity ?? 0), 0));
+
+  // Active energy burned (kcal, sum per day)
+  const energyData = await queryHK<any>("activeEnergyBurned", startDate, endDate);
+  samples.push(...sumByDay(energyData, "active_energy_kcal", (d) => Number(d.value ?? d.quantity ?? 0), 0));
+
+  // Apple Stand Time — stand hours = number of distinct hours with stand activity.
+  // appleStandTime samples have a duration; count hours with > 1 min of stand time.
+  const standData = await queryHK<any>("appleStandTime", startDate, endDate);
+  const standByDay = new Map<string, Set<number>>();
+  for (const s of standData) {
+    const start = s.startDate ?? s.endDate;
+    const dur = Number(s.duration ?? s.value ?? 0);
+    if (!start || dur < 60) continue;
+    const dt = new Date(start);
+    const day = format(dt, "yyyy-MM-dd");
+    const hour = dt.getHours();
+    const set = standByDay.get(day) ?? new Set<number>();
+    set.add(hour);
+    standByDay.set(day, set);
+  }
+  for (const [day, hours] of standByDay) {
+    samples.push({ sample_type: "stand_hours", value: hours.size, entry_date: day });
+  }
+
+
   if (samples.length > 0) {
     const rows = samples.map((s) => ({ ...s, user_id: userId, source: platform }));
     await supabase
