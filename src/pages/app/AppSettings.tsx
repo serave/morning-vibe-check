@@ -53,7 +53,7 @@ const AppSettings = () => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("first_name, last_name, sport_type, timezone")
+      .select("first_name, last_name, sport_type, timezone, steps_goal, active_energy_goal, stand_goal")
       .eq("id", user.id)
       .single()
       .then(({ data }) => {
@@ -62,6 +62,9 @@ const AppSettings = () => {
           setLastName(data.last_name ?? "");
           setSportType(data.sport_type ?? "");
           setTimezone(data.timezone ?? "America/New_York");
+          setStepsGoal(data.steps_goal ?? 10000);
+          setActiveEnergyGoal(data.active_energy_goal ?? 500);
+          setStandGoal(data.stand_goal ?? 12);
         }
       });
   }, [user]);
@@ -71,7 +74,15 @@ const AppSettings = () => {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ first_name: firstName, last_name: lastName, sport_type: sportType, timezone })
+      .update({
+        first_name: firstName,
+        last_name: lastName,
+        sport_type: sportType,
+        timezone,
+        steps_goal: stepsGoal,
+        active_energy_goal: activeEnergyGoal,
+        stand_goal: standGoal,
+      })
       .eq("id", user.id);
     setSaving(false);
     if (error) {
