@@ -135,6 +135,29 @@ const avgByDay = (
   return out;
 };
 
+const sumByDay = (
+  data: any[],
+  type: HealthSampleType,
+  valueFn: (d: any) => number,
+  round = 0,
+): SyncedSample[] => {
+  const map = new Map<string, number>();
+  for (const item of data) {
+    const dateStr = item.startDate ?? item.endDate;
+    if (!dateStr) continue;
+    const day = format(new Date(dateStr), "yyyy-MM-dd");
+    const v = valueFn(item);
+    if (!Number.isFinite(v) || v <= 0) continue;
+    map.set(day, (map.get(day) ?? 0) + v);
+  }
+  const out: SyncedSample[] = [];
+  const factor = Math.pow(10, round);
+  for (const [day, sum] of map) {
+    out.push({ sample_type: type, value: Math.round(sum * factor) / factor, entry_date: day });
+  }
+  return out;
+};
+
 const syncWorkouts = async (userId: string, source: string, startDate: Date, endDate: Date) => {
   const data = await queryHK<any>("workoutType", startDate, endDate);
   if (!data.length) return 0;
