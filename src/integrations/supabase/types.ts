@@ -332,6 +332,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_energy_goal: number
           birth_year: number | null
           created_at: string | null
           first_name: string | null
@@ -340,10 +341,13 @@ export type Database = {
           longest_streak: number | null
           max_hr: number | null
           sport_type: string | null
+          stand_goal: number
+          steps_goal: number
           streak_count: number | null
           timezone: string | null
         }
         Insert: {
+          active_energy_goal?: number
           birth_year?: number | null
           created_at?: string | null
           first_name?: string | null
@@ -352,10 +356,13 @@ export type Database = {
           longest_streak?: number | null
           max_hr?: number | null
           sport_type?: string | null
+          stand_goal?: number
+          steps_goal?: number
           streak_count?: number | null
           timezone?: string | null
         }
         Update: {
+          active_energy_goal?: number
           birth_year?: number | null
           created_at?: string | null
           first_name?: string | null
@@ -364,6 +371,8 @@ export type Database = {
           longest_streak?: number | null
           max_hr?: number | null
           sport_type?: string | null
+          stand_goal?: number
+          steps_goal?: number
           streak_count?: number | null
           timezone?: string | null
         }

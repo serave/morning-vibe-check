@@ -1,0 +1,4 @@
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS steps_goal integer NOT NULL DEFAULT 10000,
+  ADD COLUMN IF NOT EXISTS active_energy_goal integer NOT NULL DEFAULT 500,
+  ADD COLUMN IF NOT EXISTS stand_goal integer NOT NULL DEFAULT 12;
