@@ -30,6 +30,9 @@ const AppSettings = () => {
   const [lastName, setLastName] = useState("");
   const [sportType, setSportType] = useState("");
   const [timezone, setTimezone] = useState("America/New_York");
+  const [stepsGoal, setStepsGoal] = useState(10000);
+  const [activeEnergyGoal, setActiveEnergyGoal] = useState(500);
+  const [standGoal, setStandGoal] = useState(12);
   const [saving, setSaving] = useState(false);
 
   // Change password
@@ -50,7 +53,7 @@ const AppSettings = () => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("first_name, last_name, sport_type, timezone")
+      .select("first_name, last_name, sport_type, timezone, steps_goal, active_energy_goal, stand_goal")
       .eq("id", user.id)
       .single()
       .then(({ data }) => {
@@ -59,6 +62,9 @@ const AppSettings = () => {
           setLastName(data.last_name ?? "");
           setSportType(data.sport_type ?? "");
           setTimezone(data.timezone ?? "America/New_York");
+          setStepsGoal(data.steps_goal ?? 10000);
+          setActiveEnergyGoal(data.active_energy_goal ?? 500);
+          setStandGoal(data.stand_goal ?? 12);
         }
       });
   }, [user]);
@@ -68,7 +74,15 @@ const AppSettings = () => {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ first_name: firstName, last_name: lastName, sport_type: sportType, timezone })
+      .update({
+        first_name: firstName,
+        last_name: lastName,
+        sport_type: sportType,
+        timezone,
+        steps_goal: stepsGoal,
+        active_energy_goal: activeEnergyGoal,
+        stand_goal: standGoal,
+      })
       .eq("id", user.id);
     setSaving(false);
     if (error) {
@@ -211,6 +225,48 @@ const AppSettings = () => {
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
+
+        {/* Activity Ring Goals */}
+        <div className="rounded-lg bg-card p-4">
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Activity Ring Goals</h2>
+          <div className="flex flex-col gap-3">
+            <label className="text-xs text-muted-foreground">
+              Daily steps
+              <Input
+                type="number"
+                min={0}
+                value={stepsGoal}
+                onChange={(e) => setStepsGoal(Number(e.target.value) || 0)}
+                className="mt-1 h-12 rounded-sm bg-secondary"
+              />
+            </label>
+            <label className="text-xs text-muted-foreground">
+              Active energy (kcal)
+              <Input
+                type="number"
+                min={0}
+                value={activeEnergyGoal}
+                onChange={(e) => setActiveEnergyGoal(Number(e.target.value) || 0)}
+                className="mt-1 h-12 rounded-sm bg-secondary"
+              />
+            </label>
+            <label className="text-xs text-muted-foreground">
+              Stand hours
+              <Input
+                type="number"
+                min={0}
+                max={24}
+                value={standGoal}
+                onChange={(e) => setStandGoal(Number(e.target.value) || 0)}
+                className="mt-1 h-12 rounded-sm bg-secondary"
+              />
+            </label>
+            <Button onClick={handleSave} disabled={saving} className="h-12 rounded-sm">
+              {saving ? "Saving…" : "Save Goals"}
+            </Button>
+          </div>
+        </div>
+
 
         {/* Data Export */}
         <div className="rounded-lg bg-card p-4">

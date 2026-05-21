@@ -43,6 +43,10 @@
     --radius: 0.75rem;
     --radius-sm: 0.5rem;
 
+    --ring-move: 350 89% 60%;
+    --ring-energy: 142 71% 45%;
+    --ring-stand: 199 89% 55%;
+
     --sidebar-background: 228 20% 7%;
     --sidebar-foreground: 0 0% 94%;
     --sidebar-primary: 217 100% 62%;

@@ -1,72 +1,52 @@
+## Add Apple-style daily activity ring (Steps, Active Energy, Stand Hours)
 
+Extend the existing HealthKit sync to capture daily activity metrics and surface them on Today's screen as an Apple-style triple ring.
 
-## Plan: Replace Today.tsx with ref-guarded fetch logic
+### Backend / sync
 
-The user's pasted code was truncated, but the intent is clear from context: replace `Today.tsx` to use `useRef` instead of `useLocation` to prevent re-fetching loops, initialize `todayCheckin` as `undefined` (to distinguish "not yet fetched" from "no checkin"), and add `notes` to the select query.
+**`src/lib/health.ts`**
+- Add to `READ_PERMISSIONS`: `stepCount`, `activeEnergyBurned`, `appleStandTime` (or `appleStandHour`).
+- Extend `HealthSampleType` with: `steps`, `active_energy_kcal`, `stand_hours`.
+- In `syncHealthData`, query each type and aggregate per day:
+  - **Steps** → sum of `quantity` per day.
+  - **Active energy** → sum of kcal per day.
+  - **Stand hours** → count of distinct hours with a stand event (HealthKit's `appleStandHour` is a category sample; sum of qualifying hours).
+- Add a small `sumByDay` helper alongside the existing `avgByDay`.
+- Extend `TodayHealth` interface and `getTodayHealth` mapping with the three new fields.
+- Also fetch user's daily goals from `profiles` (new columns, see below) with sensible defaults (steps 10000, active_energy 500 kcal, stand 12 h).
 
-**File:** `src/pages/app/Today.tsx` — full replacement:
+### Database
 
-```typescript
-import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import CheckIn from "./CheckIn";
-import Results from "./Results";
+**New migration** — add user-configurable ring goals to `profiles`:
+- `steps_goal int default 10000`
+- `active_energy_goal int default 500`
+- `stand_goal int default 12`
 
-const Today = () => {
-  const { user } = useAuth();
-  const [todayCheckin, setTodayCheckin] = useState<any>(undefined);
-  const [streakCount, setStreakCount] = useState<number>(0);
-  const fetchedRef = useRef(false);
+No new tables needed — values flow through existing `health_samples` (`sample_type` text column, no enum constraint).
 
-  const fetchToday = async () => {
-    if (!user) return;
-    const today = new Date().toISOString().split("T")[0];
-    const [checkinRes, profileRes] = await Promise.all([
-      supabase
-        .from("checkins")
-        .select("entry_date, sleep_hours, soreness, feeling, recovery_score, training_recommendation, sleep_score, soreness_score, wellbeing_score, hrv_score, lowest_factor, baseline_phase, notes")
-        .eq("user_id", user.id)
-        .eq("entry_date", today)
-        .maybeSingle(),
-      supabase
-        .from("profiles")
-        .select("streak_count")
-        .eq("id", user.id)
-        .maybeSingle(),
-    ]);
-    setTodayCheckin(checkinRes.data ?? null);
-    setStreakCount(profileRes.data?.streak_count ?? 0);
-  };
+### UI
 
-  useEffect(() => {
-    if (!user || fetchedRef.current) return;
-    fetchedRef.current = true;
-    fetchToday();
-  }, [user]);
+**New component `src/components/ActivityRings.tsx`**
+- SVG triple concentric ring (Move = red/orange, Exercise/Energy = green, Stand = blue) — but mapped to **Steps / Active Energy / Stand Hours** as requested.
+- Props: `{ steps, stepsGoal, activeKcal, activeGoal, standHours, standGoal }`.
+- Each ring is an SVG circle with `strokeDasharray` driven by `min(value/goal, 1)`; overflow past 100% draws a second lap with reduced opacity.
+- Uses semantic color tokens from `index.css` (add ring color tokens `--ring-move`, `--ring-energy`, `--ring-stand` in HSL).
 
-  if (todayCheckin === undefined) {
-    return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
+**`src/pages/app/Today.tsx`**
+- After loading user, fetch today's health via `getTodayHealth(user.id)` and profile goals.
+- Render an `ActivityRings` card above the check-in / results, showing the three rings plus numeric labels (e.g. `7,432 / 10,000 steps`).
 
-  if (todayCheckin) {
-    return <Results checkin={todayCheckin} streakCount={streakCount} />;
-  }
+**Optional: `src/pages/app/AppSettings.tsx`**
+- Add three numeric inputs to edit `steps_goal`, `active_energy_goal`, `stand_goal` on the profile.
 
-  return <CheckIn onComplete={() => { fetchedRef.current = false; fetchToday(); }} />;
-};
+### Out of scope
+- No Health Connect (Android) wiring — current code only supports HealthKit; matches existing pattern.
+- No historical ring chart on Trends — can be a follow-up.
 
-export default Today;
-```
-
-**Key changes:**
-- Removes `useLocation` dependency — no more re-fetch on every navigation
-- Uses `useRef(false)` to ensure fetch runs only once per mount
-- Initializes state as `undefined` to distinguish loading from "no checkin"
-- Adds `notes` to the select query
-- `onComplete` resets the ref and re-fetches so Results show after submission
-
+### Files touched
+- new: `supabase/migrations/<timestamp>_activity_goals.sql`
+- new: `src/components/ActivityRings.tsx`
+- edit: `src/lib/health.ts`
+- edit: `src/pages/app/Today.tsx`
+- edit: `src/pages/app/AppSettings.tsx` (goal inputs)
+- edit: `src/index.css` (ring color tokens)

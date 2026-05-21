@@ -25,6 +25,9 @@ const READ_PERMISSIONS = [
   "vo2Max",
   "workoutType",
   "heartRate",
+  "stepCount",
+  "activeEnergyBurned",
+  "appleStandTime",
 ];
 
 export type HealthSampleType =
@@ -38,7 +41,10 @@ export type HealthSampleType =
   | "respiratory_rate"
   | "spo2"
   | "skin_temp_delta"
-  | "vo2_max";
+  | "vo2_max"
+  | "steps"
+  | "active_energy_kcal"
+  | "stand_hours";
 
 export const getHealthPlatform = (): HealthPlatform => {
   if (!Capacitor.isNativePlatform()) return null;
@@ -125,6 +131,29 @@ const avgByDay = (
     const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
     const factor = Math.pow(10, round);
     out.push({ sample_type: type, value: Math.round(avg * factor) / factor, entry_date: day });
+  }
+  return out;
+};
+
+const sumByDay = (
+  data: any[],
+  type: HealthSampleType,
+  valueFn: (d: any) => number,
+  round = 0,
+): SyncedSample[] => {
+  const map = new Map<string, number>();
+  for (const item of data) {
+    const dateStr = item.startDate ?? item.endDate;
+    if (!dateStr) continue;
+    const day = format(new Date(dateStr), "yyyy-MM-dd");
+    const v = valueFn(item);
+    if (!Number.isFinite(v) || v <= 0) continue;
+    map.set(day, (map.get(day) ?? 0) + v);
+  }
+  const out: SyncedSample[] = [];
+  const factor = Math.pow(10, round);
+  for (const [day, sum] of map) {
+    out.push({ sample_type: type, value: Math.round(sum * factor) / factor, entry_date: day });
   }
   return out;
 };
@@ -290,6 +319,34 @@ export const syncHealthData = async (userId: string, daysBack = 7): Promise<Sync
     ...avgByDay(vo2Data, "vo2_max", (d) => Number(d.value ?? d.vo2Max ?? 0), 1)
   );
 
+  // Steps (sum per day)
+  const stepsData = await queryHK<any>("stepCount", startDate, endDate);
+  samples.push(...sumByDay(stepsData, "steps", (d) => Number(d.value ?? d.quantity ?? 0), 0));
+
+  // Active energy burned (kcal, sum per day)
+  const energyData = await queryHK<any>("activeEnergyBurned", startDate, endDate);
+  samples.push(...sumByDay(energyData, "active_energy_kcal", (d) => Number(d.value ?? d.quantity ?? 0), 0));
+
+  // Apple Stand Time — stand hours = number of distinct hours with stand activity.
+  // appleStandTime samples have a duration; count hours with > 1 min of stand time.
+  const standData = await queryHK<any>("appleStandTime", startDate, endDate);
+  const standByDay = new Map<string, Set<number>>();
+  for (const s of standData) {
+    const start = s.startDate ?? s.endDate;
+    const dur = Number(s.duration ?? s.value ?? 0);
+    if (!start || dur < 60) continue;
+    const dt = new Date(start);
+    const day = format(dt, "yyyy-MM-dd");
+    const hour = dt.getHours();
+    const set = standByDay.get(day) ?? new Set<number>();
+    set.add(hour);
+    standByDay.set(day, set);
+  }
+  for (const [day, hours] of standByDay) {
+    samples.push({ sample_type: "stand_hours", value: hours.size, entry_date: day });
+  }
+
+
   if (samples.length > 0) {
     const rows = samples.map((s) => ({ ...s, user_id: userId, source: platform }));
     await supabase
@@ -328,6 +385,9 @@ export interface TodayHealth {
   sleep_deep_hours: number | null;
   sleep_rem_hours: number | null;
   vo2_max: number | null;
+  steps: number | null;
+  active_energy_kcal: number | null;
+  stand_hours: number | null;
   source: string | null;
 }
 
@@ -342,7 +402,8 @@ export const getTodayHealth = async (userId: string): Promise<TodayHealth> => {
   const out: TodayHealth = {
     hrv_rmssd: null, sleep_hours: null, resting_hr: null,
     respiratory_rate: null, spo2: null, skin_temp_delta: null,
-    sleep_deep_hours: null, sleep_rem_hours: null, vo2_max: null, source: null,
+    sleep_deep_hours: null, sleep_rem_hours: null, vo2_max: null,
+    steps: null, active_energy_kcal: null, stand_hours: null, source: null,
   };
   for (const row of data ?? []) {
     out.source = row.source;
