@@ -216,6 +216,79 @@ const History = () => {
         })}
       </div>
 
+      {/* Activity section */}
+      <section className="mt-8">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Activity</h2>
+          <span className="text-xs text-muted-foreground">
+            {monthlyTotals.days} {monthlyTotals.days === 1 ? "day" : "days"}
+          </span>
+        </div>
+
+        {/* Monthly totals */}
+        <div className="mb-4 grid grid-cols-3 gap-2">
+          <div className="rounded-lg bg-card p-3">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Footprints className="h-3.5 w-3.5" style={{ color: "hsl(var(--ring-move))" }} />
+              <span className="text-[11px]">Steps</span>
+            </div>
+            <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
+              {monthlyTotals.steps.toLocaleString()}
+            </p>
+          </div>
+          <div className="rounded-lg bg-card p-3">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Flame className="h-3.5 w-3.5" style={{ color: "hsl(var(--ring-energy))" }} />
+              <span className="text-[11px]">kcal</span>
+            </div>
+            <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
+              {Math.round(monthlyTotals.kcal).toLocaleString()}
+            </p>
+          </div>
+          <div className="rounded-lg bg-card p-3">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" style={{ color: "hsl(var(--ring-stand))" }} />
+              <span className="text-[11px]">Stand hr</span>
+            </div>
+            <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
+              {monthlyTotals.stand.toLocaleString()}
+            </p>
+          </div>
+        </div>
+
+        {/* Per-day list */}
+        {activityDays.length === 0 ? (
+          <p className="rounded-lg bg-card p-4 text-center text-xs text-muted-foreground">
+            No activity data for this month.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border overflow-hidden rounded-lg bg-card">
+            {activityDays.map(([date, a]) => (
+              <li key={date} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                <span className="w-14 text-xs font-medium text-foreground">
+                  {format(new Date(date + "T00:00:00"), "EEE d")}
+                </span>
+                <div className="flex flex-1 items-center justify-end gap-3 text-xs tabular-nums">
+                  <span className="flex items-center gap-1 text-foreground">
+                    <Footprints className="h-3 w-3" style={{ color: "hsl(var(--ring-move))" }} />
+                    {a.steps.toLocaleString()}
+                  </span>
+                  <span className="flex items-center gap-1 text-foreground">
+                    <Flame className="h-3 w-3" style={{ color: "hsl(var(--ring-energy))" }} />
+                    {Math.round(a.active_energy_kcal).toLocaleString()}
+                  </span>
+                  <span className="flex w-10 items-center gap-1 text-foreground">
+                    <Clock className="h-3 w-3" style={{ color: "hsl(var(--ring-stand))" }} />
+                    {a.stand_hours}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+
       {/* Bottom sheet overlay */}
       {selectedDate && selectedCheckin && (
         <>
