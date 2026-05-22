@@ -47,6 +47,7 @@ const History = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [checkins, setCheckins] = useState<CheckinSummary[]>([]);
+  const [activity, setActivity] = useState<Map<string, DayActivity>>(new Map());
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
