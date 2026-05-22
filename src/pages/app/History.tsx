@@ -69,18 +69,53 @@ const History = () => {
     fetchCheckins();
   }, [user]);
 
-  const checkinMap = useMemo(() => {
-    const map = new Map<string, CheckinSummary>();
-    checkins.forEach((c) => map.set(c.entry_date, c));
-    return map;
-  }, [checkins]);
-
   const today = new Date();
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("health_samples")
+        .select("sample_type, value, entry_date")
+        .eq("user_id", user.id)
+        .gte("entry_date", format(monthStart, "yyyy-MM-dd"))
+        .lte("entry_date", format(monthEnd, "yyyy-MM-dd"))
+        .in("sample_type", ["steps", "active_energy_kcal", "stand_hours"]);
+      const map = new Map<string, DayActivity>();
+      for (const row of data ?? []) {
+        const cur = map.get(row.entry_date) ?? { steps: 0, active_energy_kcal: 0, stand_hours: 0 };
+        (cur as any)[row.sample_type] = Number(row.value);
+        map.set(row.entry_date, cur);
+      }
+      setActivity(map);
+    })();
+  }, [user, currentMonth]);
+
+  const checkinMap = useMemo(() => {
+    const map = new Map<string, CheckinSummary>();
+    checkins.forEach((c) => map.set(c.entry_date, c));
+    return map;
+  }, [checkins]);
+
+  const monthlyTotals = useMemo(() => {
+    let steps = 0, kcal = 0, stand = 0, days = 0;
+    for (const [, a] of activity) {
+      steps += a.steps; kcal += a.active_energy_kcal; stand += a.stand_hours;
+      if (a.steps || a.active_energy_kcal || a.stand_hours) days++;
+    }
+    return { steps, kcal, stand, days };
+  }, [activity]);
+
+  const activityDays = useMemo(() => {
+    return Array.from(activity.entries())
+      .filter(([, a]) => a.steps || a.active_energy_kcal || a.stand_hours)
+      .sort((a, b) => b[0].localeCompare(a[0]));
+  }, [activity]);
 
   const selectedCheckin = selectedDate ? checkinMap.get(selectedDate) ?? null : null;
 
