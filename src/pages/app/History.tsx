@@ -16,7 +16,7 @@ import {
   isAfter,
   isBefore,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Pencil, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2, X, Footprints, Flame, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -25,6 +25,12 @@ interface CheckinSummary {
   recovery_score: number | null;
   training_recommendation: string | null;
   id: string;
+}
+
+interface DayActivity {
+  steps: number;
+  active_energy_kcal: number;
+  stand_hours: number;
 }
 
 function scoreColor(score: number | null): string {
@@ -41,6 +47,7 @@ const History = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [checkins, setCheckins] = useState<CheckinSummary[]>([]);
+  const [activity, setActivity] = useState<Map<string, DayActivity>>(new Map());
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -62,18 +69,53 @@ const History = () => {
     fetchCheckins();
   }, [user]);
 
-  const checkinMap = useMemo(() => {
-    const map = new Map<string, CheckinSummary>();
-    checkins.forEach((c) => map.set(c.entry_date, c));
-    return map;
-  }, [checkins]);
-
   const today = new Date();
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("health_samples")
+        .select("sample_type, value, entry_date")
+        .eq("user_id", user.id)
+        .gte("entry_date", format(monthStart, "yyyy-MM-dd"))
+        .lte("entry_date", format(monthEnd, "yyyy-MM-dd"))
+        .in("sample_type", ["steps", "active_energy_kcal", "stand_hours"]);
+      const map = new Map<string, DayActivity>();
+      for (const row of data ?? []) {
+        const cur = map.get(row.entry_date) ?? { steps: 0, active_energy_kcal: 0, stand_hours: 0 };
+        (cur as any)[row.sample_type] = Number(row.value);
+        map.set(row.entry_date, cur);
+      }
+      setActivity(map);
+    })();
+  }, [user, currentMonth]);
+
+  const checkinMap = useMemo(() => {
+    const map = new Map<string, CheckinSummary>();
+    checkins.forEach((c) => map.set(c.entry_date, c));
+    return map;
+  }, [checkins]);
+
+  const monthlyTotals = useMemo(() => {
+    let steps = 0, kcal = 0, stand = 0, days = 0;
+    for (const [, a] of activity) {
+      steps += a.steps; kcal += a.active_energy_kcal; stand += a.stand_hours;
+      if (a.steps || a.active_energy_kcal || a.stand_hours) days++;
+    }
+    return { steps, kcal, stand, days };
+  }, [activity]);
+
+  const activityDays = useMemo(() => {
+    return Array.from(activity.entries())
+      .filter(([, a]) => a.steps || a.active_energy_kcal || a.stand_hours)
+      .sort((a, b) => b[0].localeCompare(a[0]));
+  }, [activity]);
 
   const selectedCheckin = selectedDate ? checkinMap.get(selectedDate) ?? null : null;
 
@@ -173,6 +215,79 @@ const History = () => {
           );
         })}
       </div>
+
+      {/* Activity section */}
+      <section className="mt-8">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Activity</h2>
+          <span className="text-xs text-muted-foreground">
+            {monthlyTotals.days} {monthlyTotals.days === 1 ? "day" : "days"}
+          </span>
+        </div>
+
+        {/* Monthly totals */}
+        <div className="mb-4 grid grid-cols-3 gap-2">
+          <div className="rounded-lg bg-card p-3">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Footprints className="h-3.5 w-3.5" style={{ color: "hsl(var(--ring-move))" }} />
+              <span className="text-[11px]">Steps</span>
+            </div>
+            <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
+              {monthlyTotals.steps.toLocaleString()}
+            </p>
+          </div>
+          <div className="rounded-lg bg-card p-3">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Flame className="h-3.5 w-3.5" style={{ color: "hsl(var(--ring-energy))" }} />
+              <span className="text-[11px]">kcal</span>
+            </div>
+            <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
+              {Math.round(monthlyTotals.kcal).toLocaleString()}
+            </p>
+          </div>
+          <div className="rounded-lg bg-card p-3">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" style={{ color: "hsl(var(--ring-stand))" }} />
+              <span className="text-[11px]">Stand hr</span>
+            </div>
+            <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
+              {monthlyTotals.stand.toLocaleString()}
+            </p>
+          </div>
+        </div>
+
+        {/* Per-day list */}
+        {activityDays.length === 0 ? (
+          <p className="rounded-lg bg-card p-4 text-center text-xs text-muted-foreground">
+            No activity data for this month.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border overflow-hidden rounded-lg bg-card">
+            {activityDays.map(([date, a]) => (
+              <li key={date} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                <span className="w-14 text-xs font-medium text-foreground">
+                  {format(new Date(date + "T00:00:00"), "EEE d")}
+                </span>
+                <div className="flex flex-1 items-center justify-end gap-3 text-xs tabular-nums">
+                  <span className="flex items-center gap-1 text-foreground">
+                    <Footprints className="h-3 w-3" style={{ color: "hsl(var(--ring-move))" }} />
+                    {a.steps.toLocaleString()}
+                  </span>
+                  <span className="flex items-center gap-1 text-foreground">
+                    <Flame className="h-3 w-3" style={{ color: "hsl(var(--ring-energy))" }} />
+                    {Math.round(a.active_energy_kcal).toLocaleString()}
+                  </span>
+                  <span className="flex w-10 items-center gap-1 text-foreground">
+                    <Clock className="h-3 w-3" style={{ color: "hsl(var(--ring-stand))" }} />
+                    {a.stand_hours}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
 
       {/* Bottom sheet overlay */}
       {selectedDate && selectedCheckin && (
