@@ -16,7 +16,7 @@ import {
   isAfter,
   isBefore,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Pencil, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2, X, Footprints, Flame, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -25,6 +25,12 @@ interface CheckinSummary {
   recovery_score: number | null;
   training_recommendation: string | null;
   id: string;
+}
+
+interface DayActivity {
+  steps: number;
+  active_energy_kcal: number;
+  stand_hours: number;
 }
 
 function scoreColor(score: number | null): string {
