@@ -91,6 +91,7 @@ const Today = () => {
     return (
       <>
         {ringsCard}
+        {vitalsCard}
         <Results checkin={todayCheckin} streakCount={streakCount} />
       </>
     );
@@ -99,6 +100,7 @@ const Today = () => {
   return (
     <>
       {ringsCard}
+      {vitalsCard}
       <CheckIn onComplete={() => { fetchedRef.current = false; fetchToday(); }} />
     </>
   );
