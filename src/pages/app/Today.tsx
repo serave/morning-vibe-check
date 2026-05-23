@@ -81,6 +81,12 @@ const Today = () => {
     </div>
   ) : null;
 
+  const vitalsCard = user ? (
+    <div className="px-4 pt-4">
+      <VitalsBaselines userId={user.id} />
+    </div>
+  ) : null;
+
   if (todayCheckin) {
     return (
       <>
