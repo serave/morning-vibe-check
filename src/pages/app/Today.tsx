@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getTodayHealth, type TodayHealth } from "@/lib/health";
 import ActivityRings from "@/components/ActivityRings";
+import VitalsBaselines from "@/components/VitalsBaselines";
 import CheckIn from "./CheckIn";
 import Results from "./Results";
 
@@ -80,10 +81,17 @@ const Today = () => {
     </div>
   ) : null;
 
+  const vitalsCard = user ? (
+    <div className="px-4 pt-4">
+      <VitalsBaselines userId={user.id} />
+    </div>
+  ) : null;
+
   if (todayCheckin) {
     return (
       <>
         {ringsCard}
+        {vitalsCard}
         <Results checkin={todayCheckin} streakCount={streakCount} />
       </>
     );
@@ -92,6 +100,7 @@ const Today = () => {
   return (
     <>
       {ringsCard}
+      {vitalsCard}
       <CheckIn onComplete={() => { fetchedRef.current = false; fetchToday(); }} />
     </>
   );
