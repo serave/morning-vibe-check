@@ -88,10 +88,17 @@ const Today = () => {
     </div>
   ) : null;
 
+  const illnessCard = user ? (
+    <div className="px-4 pt-4">
+      <IllnessFlag userId={user.id} />
+    </div>
+  ) : null;
+
   if (todayCheckin) {
     return (
       <>
         {ringsCard}
+        {illnessCard}
         {vitalsCard}
         <Results checkin={todayCheckin} streakCount={streakCount} />
       </>
@@ -101,6 +108,7 @@ const Today = () => {
   return (
     <>
       {ringsCard}
+      {illnessCard}
       {vitalsCard}
       <CheckIn onComplete={() => { fetchedRef.current = false; fetchToday(); }} />
     </>
