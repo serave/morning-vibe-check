@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getTodayHealth, type TodayHealth } from "@/lib/health";
 import ActivityRings from "@/components/ActivityRings";
 import VitalsBaselines from "@/components/VitalsBaselines";
+import IllnessFlag from "@/components/IllnessFlag";
 import CheckIn from "./CheckIn";
 import Results from "./Results";
 
