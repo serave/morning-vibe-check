@@ -9,11 +9,21 @@ export interface IllnessSignal {
 
 export type IllnessSeverity = "none" | "minor" | "watch" | "possible_illness";
 
+export type TrainingAction = "REST" | "SKIP" | "EASY" | "LIGHT" | "NORMAL";
+
+export interface TrainingRecommendation {
+  action: TrainingAction;
+  emoji: string;
+  label: string;
+  rationale: string;
+}
+
 export interface IllnessAssessment {
   severity: IllnessSeverity;
   title: string;
   message: string;
   signals: IllnessSignal[];
+  recommendation: TrainingRecommendation | null;
 }
 
 type Row = { sample_type: string; value: number; entry_date: string };
