@@ -42,6 +42,21 @@ const IllnessFlag = ({ userId }: Props) => {
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-semibold text-foreground">{data.title}</h3>
           <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{data.message}</p>
+
+          {data.recommendation && (
+            <div className="mt-3 rounded-md border border-border/50 bg-background/40 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Training recommendation
+              </p>
+              <p className="mt-1 text-sm font-medium text-foreground">
+                {data.recommendation.emoji} {data.recommendation.label}
+              </p>
+              <p className="mt-1 text-xs leading-snug text-muted-foreground">
+                {data.recommendation.rationale}
+              </p>
+            </div>
+          )}
+
           <ul className="mt-2.5 space-y-1">
             {data.signals.map((s) => (
               <li key={s.key} className="flex items-baseline justify-between gap-2 text-xs">
