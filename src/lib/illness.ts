@@ -107,5 +107,36 @@ export const detectIllness = async (
     message = "One metric is outside your normal range. Likely benign, but worth noting.";
   }
 
-  return { severity, title, message, signals };
+  const recommendation = buildRecommendation(severity, signals);
+  return { severity, title, message, signals, recommendation };
+};
+
+const buildRecommendation = (
+  severity: IllnessSeverity,
+  signals: IllnessSignal[],
+): TrainingRecommendation | null => {
+  if (severity === "none") return null;
+  const reasons = signals.map((s) => s.label.toLowerCase()).join(", ");
+  if (severity === "possible_illness") {
+    return {
+      action: "REST",
+      emoji: "🛌",
+      label: "Rest today — skip training",
+      rationale: `Your body is showing multiple illness signals (${reasons}). Hard training now risks deeper fatigue or longer illness. Prioritize sleep, fluids, and light movement only.`,
+    };
+  }
+  if (severity === "watch") {
+    return {
+      action: "SKIP",
+      emoji: "🚶",
+      label: "Skip intensity — easy movement only",
+      rationale: `Two markers are drifting (${reasons}). Replace today's workout with a walk, mobility, or Z1 cardio. Re-assess tomorrow.`,
+    };
+  }
+  return {
+    action: "LIGHT",
+    emoji: "🧘",
+    label: "Go light — keep effort easy",
+    rationale: `Minor variance in ${reasons}. Likely benign, but pull intensity back ~20% and avoid maximal efforts today.`,
+  };
 };
