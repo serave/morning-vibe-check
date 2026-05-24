@@ -6,6 +6,7 @@ import ActivityRings from "@/components/ActivityRings";
 import VitalsBaselines from "@/components/VitalsBaselines";
 import IllnessFlag from "@/components/IllnessFlag";
 import SleepNeed from "@/components/SleepNeed";
+import TargetStrain from "@/components/TargetStrain";
 import CheckIn from "./CheckIn";
 import Results from "./Results";
 
@@ -101,11 +102,18 @@ const Today = () => {
     </div>
   ) : null;
 
+  const targetStrainCard = user ? (
+    <div className="px-4 pt-4">
+      <TargetStrain userId={user.id} />
+    </div>
+  ) : null;
+
   if (todayCheckin) {
     return (
       <>
         {ringsCard}
         {illnessCard}
+        {targetStrainCard}
         {sleepNeedCard}
         {vitalsCard}
         <Results checkin={todayCheckin} streakCount={streakCount} />
@@ -117,6 +125,7 @@ const Today = () => {
     <>
       {ringsCard}
       {illnessCard}
+      {targetStrainCard}
       {sleepNeedCard}
       {vitalsCard}
       <CheckIn onComplete={() => { fetchedRef.current = false; fetchToday(); }} />
