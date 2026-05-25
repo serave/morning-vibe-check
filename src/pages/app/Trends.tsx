@@ -6,6 +6,7 @@ import {
   BarChart, Bar, Cell, Legend,
 } from "recharts";
 import { format, subDays } from "date-fns";
+import JournalSummary from "@/components/JournalSummary";
 
 type Period = "7D" | "1M" | "3M" | "All";
 
@@ -170,6 +171,8 @@ const Trends = () => {
           </div>
         ))}
       </div>
+
+      <JournalSummary />
 
       {/* Chart 1 — Recovery Score */}
       <div className="rounded-lg bg-card p-4">
