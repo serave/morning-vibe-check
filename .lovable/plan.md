@@ -1,52 +1,47 @@
-## Add Apple-style daily activity ring (Steps, Active Energy, Stand Hours)
+# Oura + Strava + PWA Install — 7 Step Plan
 
-Extend the existing HealthKit sync to capture daily activity metrics and surface them on Today's screen as an Apple-style triple ring.
+I'll track progress explicitly. After each step I'll tell you: **"Step X of 7 done. Next: Step Y."**
 
-### Backend / sync
+---
 
-**`src/lib/health.ts`**
-- Add to `READ_PERMISSIONS`: `stepCount`, `activeEnergyBurned`, `appleStandTime` (or `appleStandHour`).
-- Extend `HealthSampleType` with: `steps`, `active_energy_kcal`, `stand_hours`.
-- In `syncHealthData`, query each type and aggregate per day:
-  - **Steps** → sum of `quantity` per day.
-  - **Active energy** → sum of kcal per day.
-  - **Stand hours** → count of distinct hours with a stand event (HealthKit's `appleStandHour` is a category sample; sum of qualifying hours).
-- Add a small `sumByDay` helper alongside the existing `avgByDay`.
-- Extend `TodayHealth` interface and `getTodayHealth` mapping with the three new fields.
-- Also fetch user's daily goals from `profiles` (new columns, see below) with sensible defaults (steps 10000, active_energy 500 kcal, stand 12 h).
+## Step 1 — Database: integrations table
+Add `integrations` table to store per-user OAuth tokens (provider, access_token, refresh_token, expires_at, scope, athlete_id). RLS: users own their rows. Tokens stored encrypted-at-rest (Supabase default).
 
-### Database
+## Step 2 — Oura OAuth flow
+- Create Oura developer app (you'll do this in browser, I'll guide you)
+- Add `OURA_CLIENT_ID` + `OURA_CLIENT_SECRET` as secrets
+- Edge functions: `oura-oauth-start`, `oura-oauth-callback`
+- "Connect Oura" button on new `/app/connections` page
 
-**New migration** — add user-configurable ring goals to `profiles`:
-- `steps_goal int default 10000`
-- `active_energy_goal int default 500`
-- `stand_goal int default 12`
+## Step 3 — Oura sync edge function
+`sync-oura` function pulls daily: sleep, readiness, HRV, RHR, skin temp, activity → writes to `health_samples` + auto-populates today's `checkins` row (recovery_score, hrv_rmssd, sleep_hours, source_hrv='OURA', source_sleep='OURA'). Manual "Sync now" button + nightly cron.
 
-No new tables needed — values flow through existing `health_samples` (`sample_type` text column, no enum constraint).
+## Step 4 — Strava OAuth flow
+- Create Strava API app (I'll guide you)
+- Add `STRAVA_CLIENT_ID` + `STRAVA_CLIENT_SECRET` as secrets
+- Edge functions: `strava-oauth-start`, `strava-oauth-callback`
+- "Connect Strava" button on `/app/connections`
 
-### UI
+## Step 5 — Strava sync edge function
+`sync-strava` pulls recent activities → writes to `health_workouts` (type, duration, distance, HR avg/max, zones, computed strain). Manual "Sync now" + nightly cron. Optional webhook for real-time later.
 
-**New component `src/components/ActivityRings.tsx`**
-- SVG triple concentric ring (Move = red/orange, Exercise/Energy = green, Stand = blue) — but mapped to **Steps / Active Energy / Stand Hours** as requested.
-- Props: `{ steps, stepsGoal, activeKcal, activeGoal, standHours, standGoal }`.
-- Each ring is an SVG circle with `strokeDasharray` driven by `min(value/goal, 1)`; overflow past 100% draws a second lap with reduced opacity.
-- Uses semantic color tokens from `index.css` (add ring color tokens `--ring-move`, `--ring-energy`, `--ring-stand` in HSL).
+## Step 6 — Connections settings page
+Single `/app/connections` page showing: Oura status + last sync, Strava status + last sync, connect/disconnect/sync buttons. Add link from main nav.
 
-**`src/pages/app/Today.tsx`**
-- After loading user, fetch today's health via `getTodayHealth(user.id)` and profile goals.
-- Render an `ActivityRings` card above the check-in / results, showing the three rings plus numeric labels (e.g. `7,432 / 10,000 steps`).
+## Step 7 — PWA installable (no service worker)
+Add `manifest.json` + icons + Apple touch meta tags → iPhone install via Safari Share → Add to Home Screen. **No `vite-plugin-pwa`, no service worker** (avoids preview-cache issues and keeps Capacitor path open for later).
 
-**Optional: `src/pages/app/AppSettings.tsx`**
-- Add three numeric inputs to edit `steps_goal`, `active_energy_goal`, `stand_goal` on the profile.
+---
 
-### Out of scope
-- No Health Connect (Android) wiring — current code only supports HealthKit; matches existing pattern.
-- No historical ring chart on Trends — can be a follow-up.
+## Deferred (not in this plan)
+- Capacitor + Apple HealthKit native build (do later when you have Mac access)
+- Strava webhooks (cron is fine for daily testing)
+- RunGap (already pushes to Strava, so covered)
 
-### Files touched
-- new: `supabase/migrations/<timestamp>_activity_goals.sql`
-- new: `src/components/ActivityRings.tsx`
-- edit: `src/lib/health.ts`
-- edit: `src/pages/app/Today.tsx`
-- edit: `src/pages/app/AppSettings.tsx` (goal inputs)
-- edit: `src/index.css` (ring color tokens)
+## Technical notes
+- Token refresh handled inside each sync function before API calls
+- Cron jobs use `pg_cron` + `pg_net`, scheduled per-user at 5am local
+- All edge functions use Zod input validation + CORS
+- Existing illness detection, target strain, sleep need automatically benefit once Oura data flows in
+
+**I'll start with Step 1 as soon as you approve.**

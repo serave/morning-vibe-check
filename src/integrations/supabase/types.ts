@@ -330,6 +330,51 @@ export type Database = {
         }
         Relationships: []
       }
+      integrations: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string | null
+          external_user_id: string | null
+          id: string
+          last_synced_at: string | null
+          metadata: Json
+          provider: string
+          refresh_token: string | null
+          scope: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at?: string | null
+          external_user_id?: string | null
+          id?: string
+          last_synced_at?: string | null
+          metadata?: Json
+          provider: string
+          refresh_token?: string | null
+          scope?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string | null
+          external_user_id?: string | null
+          id?: string
+          last_synced_at?: string | null
+          metadata?: Json
+          provider?: string
+          refresh_token?: string | null
+          scope?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           active_energy_goal: number
