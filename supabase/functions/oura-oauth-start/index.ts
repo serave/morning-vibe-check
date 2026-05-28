@@ -47,7 +47,13 @@ Deno.serve(async (req) => {
     const clientId = Deno.env.get("OURA_CLIENT_ID")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const url = new URL(req.url);
-    const returnTo = url.searchParams.get("return_to") || "";
+    let returnTo = url.searchParams.get("return_to") || "";
+    if (!returnTo && req.method === "POST") {
+      try {
+        const body = await req.json();
+        returnTo = body?.return_to || "";
+      } catch { /* ignore */ }
+    }
 
     const nonce = crypto.randomUUID();
     const payload = `${user.id}.${nonce}.${Date.now()}.${encodeURIComponent(returnTo)}`;
