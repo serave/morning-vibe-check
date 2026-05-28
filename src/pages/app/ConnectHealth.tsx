@@ -165,6 +165,38 @@ const ConnectHealth = () => {
         Auto-import HRV, sleep stages, resting HR, respiratory rate, SpO₂, wrist temp & workouts. Syncs in the background whenever the app opens.
       </p>
 
+      {/* Oura — cloud-based, works on web & native */}
+      <div className="mt-6 rounded-lg bg-card p-4">
+        <div className="mb-2 flex items-center gap-2 text-foreground">
+          <Heart className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Oura Ring</span>
+        </div>
+        {ouraConnection ? (
+          <>
+            <p className="text-sm text-foreground">
+              ✅ Connected
+              {ouraConnection.last_synced_at && (
+                <span className="ml-1 text-muted-foreground">
+                  · synced {formatDistanceToNow(new Date(ouraConnection.last_synced_at), { addSuffix: true })}
+                </span>
+              )}
+            </p>
+            <Button variant="ghost" onClick={handleDisconnectOura} className="mt-3 w-full text-destructive hover:text-destructive">
+              <Unplug className="mr-2 h-4 w-4" /> Disconnect Oura
+            </Button>
+          </>
+        ) : (
+          <>
+            <p className="mb-3 text-sm text-muted-foreground">
+              Pulls sleep, readiness, HRV, RHR, SpO₂, skin temp and activity from your Oura account.
+            </p>
+            <Button onClick={handleConnectOura} disabled={ouraLoading} className="w-full">
+              {ouraLoading ? "Redirecting…" : "Connect Oura"}
+            </Button>
+          </>
+        )}
+      </div>
+
       {!platform && (
         <div className="mt-6 rounded-lg bg-card p-4">
           <div className="mb-2 flex items-center gap-2 text-foreground">
