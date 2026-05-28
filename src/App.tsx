@@ -18,6 +18,7 @@ import ConnectHealth from "./pages/app/ConnectHealth";
 import NotFound from "./pages/NotFound";
 import TestGemini from "./pages/TestGemini";
 import TermsAndConditions from "./pages/TermsAndConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/test-gemini" element={<TestGemini />} />
             <Route path="/terms" element={<TermsAndConditions />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route
               path="/app"
               element={
