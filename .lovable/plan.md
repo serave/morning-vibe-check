@@ -1,21 +1,17 @@
-Build a Terms and Conditions page for Morning Vibe Check.
+## Goal
+Add a standalone Privacy Policy page at `/privacy` using the user's provided content and the same dark-themed styling as the existing Terms and Conditions page.
 
-## What to build
-- A new `/terms` route and a `TermsAndConditions` page component.
-- Content uses the provided T&C template with blanks filled in:
-  - App name: **Morning Vibe Check**
-  - Website: **https://morning-vibe-check.lovable.app**
-  - Email/contact section removed per user request.
+## Changes
 
-## How to build
-- Page: `src/pages/TermsAndConditions.tsx`
-  - Dark-themed, centered content card matching app aesthetic (`bg-card`, `text-foreground`, Inter font).
-  - Sections rendered as styled headings + paragraphs with clear typography hierarchy.
-  - "Last Updated: May 2026" header.
-  - Back navigation link.
-- Routing: Add `/terms` route in `src/App.tsx` (outside protected app layout).
-- Links: Add "Terms and Conditions" link on Register page (and optionally Login footer) so users can access it during signup.
+### 1. New file: `src/pages/PrivacyPolicy.tsx`
+- Mirror the `TermsAndConditions.tsx` component structure: `Section` helper, `bg-background` wrapper, `bg-card` content card.
+- Use app name **Morning Vibe Check** and website **https://morning-vibe-check.lovable.app**.
+- Omit email contact (per user request).
+- Include all 11 sections from the user's Privacy Policy template.
+- Add a "Back" link to `/login`.
 
-## Notes
-- No backend changes required.
-- No new dependencies required.
+### 2. Update: `src/App.tsx`
+- Import `PrivacyPolicy`.
+- Add `<Route path="/privacy" element={<PrivacyPolicy />} />` alongside the existing `/terms` route (outside the protected layout).
+
+## No backend or dependency changes required.
