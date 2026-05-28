@@ -102,6 +102,8 @@ Deno.serve(async (req) => {
     return htmlRedirect(fallback + "&reason=db", "Could not save tokens.");
   }
 
-  const dest = verified.returnTo || "/app/connect-health?oura=connected";
+  const base = verified.returnTo || "https://morning-vibe-check.lovable.app/app/connect-health";
+  const sep = base.includes("?") ? "&" : "?";
+  const dest = `${base}${sep}oura=connected`;
   return htmlRedirect(dest, "Oura connected. Redirecting…");
 });
