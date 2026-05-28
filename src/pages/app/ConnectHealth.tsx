@@ -83,7 +83,7 @@ const ConnectHealth = () => {
     setOuraLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("oura-oauth-start", {
-        body: { return_to: window.location.pathname },
+        body: { return_to: window.location.origin + window.location.pathname },
       });
       if (error) throw error;
       if (data?.url) {
