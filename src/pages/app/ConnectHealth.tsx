@@ -33,6 +33,7 @@ const ConnectHealth = () => {
   const [syncing, setSyncing] = useState(false);
   const [ouraConnection, setOuraConnection] = useState<any>(null);
   const [ouraLoading, setOuraLoading] = useState(false);
+  const [ouraSyncing, setOuraSyncing] = useState(false);
   const [revokedSteps, setRevokedSteps] = useState<Record<string, boolean>>({});
   const [showRevokeChecklist, setShowRevokeChecklist] = useState(false);
 
