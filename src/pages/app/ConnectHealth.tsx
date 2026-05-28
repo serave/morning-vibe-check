@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -25,11 +25,14 @@ const ConnectHealth = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const platform = getHealthPlatform();
   const [available, setAvailable] = useState<boolean | null>(null);
   const [connection, setConnection] = useState<any>(null);
   const [today, setToday] = useState<TodayHealth | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [ouraConnection, setOuraConnection] = useState<any>(null);
+  const [ouraLoading, setOuraLoading] = useState(false);
   const [revokedSteps, setRevokedSteps] = useState<Record<string, boolean>>({});
   const [showRevokeChecklist, setShowRevokeChecklist] = useState(false);
 
@@ -47,15 +50,55 @@ const ConnectHealth = () => {
 
   const refresh = async () => {
     if (!user) return;
-    const [conn, t] = await Promise.all([getConnection(user.id), getTodayHealth(user.id)]);
+    const [conn, t, oura] = await Promise.all([
+      getConnection(user.id),
+      getTodayHealth(user.id),
+      supabase.from("integrations").select("*").eq("user_id", user.id).eq("provider", "oura").maybeSingle(),
+    ]);
     setConnection(conn);
     setToday(t);
+    setOuraConnection(oura.data ?? null);
   };
 
   useEffect(() => {
     isHealthAvailable().then(setAvailable);
     refresh();
   }, [user]);
+
+  useEffect(() => {
+    const status = searchParams.get("oura");
+    if (!status) return;
+    if (status === "connected") {
+      toast({ title: "Oura connected", description: "Your Oura account is linked." });
+    } else if (status === "error") {
+      const reason = searchParams.get("reason") || "Unknown error";
+      toast({ title: "Oura connection failed", description: reason, variant: "destructive" });
+    }
+    searchParams.delete("oura");
+    searchParams.delete("reason");
+    setSearchParams(searchParams, { replace: true });
+  }, [searchParams]);
+
+  const handleConnectOura = async () => {
+    setOuraLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("oura-oauth-start", {
+        body: { return_to: window.location.pathname },
+      });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
+    } catch (e: any) {
+      toast({ title: "Could not start Oura connection", description: e?.message ?? "Unknown error", variant: "destructive" });
+      setOuraLoading(false);
+    }
+  };
+
+  const handleDisconnectOura = async () => {
+    if (!user) return;
+    await supabase.from("integrations").delete().eq("user_id", user.id).eq("provider", "oura");
+    setOuraConnection(null);
+    toast({ title: "Oura disconnected" });
+  };
 
   const handleConnect = async () => {
     if (!user) return;
