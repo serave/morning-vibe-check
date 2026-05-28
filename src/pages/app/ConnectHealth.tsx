@@ -211,7 +211,11 @@ const ConnectHealth = () => {
                 </span>
               )}
             </p>
-            <Button variant="ghost" onClick={handleDisconnectOura} className="mt-3 w-full text-destructive hover:text-destructive">
+            <Button onClick={handleSyncOura} disabled={ouraSyncing} variant="secondary" className="mt-3 w-full">
+              <RefreshCw className={ouraSyncing ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"} />
+              {ouraSyncing ? "Syncing…" : "Sync Now"}
+            </Button>
+            <Button variant="ghost" onClick={handleDisconnectOura} className="mt-2 w-full text-destructive hover:text-destructive">
               <Unplug className="mr-2 h-4 w-4" /> Disconnect Oura
             </Button>
           </>
