@@ -106,6 +106,23 @@ const ConnectHealth = () => {
     }
   };
 
+  const handleSyncOura = async () => {
+    setOuraSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-oura", { body: { days: 14 } });
+      if (error) throw error;
+      toast({
+        title: "Oura synced",
+        description: `${data?.samplesUpserted ?? 0} samples · ${data?.workoutsUpserted ?? 0} workouts${data?.checkinUpdated ? " · today's check-in updated" : ""}`,
+      });
+      await refresh();
+    } catch (e: any) {
+      toast({ title: "Oura sync failed", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setOuraSyncing(false);
+    }
+  };
+
   const handleDisconnectOura = async () => {
     if (!user) return;
     await supabase.from("integrations").delete().eq("user_id", user.id).eq("provider", "oura");
