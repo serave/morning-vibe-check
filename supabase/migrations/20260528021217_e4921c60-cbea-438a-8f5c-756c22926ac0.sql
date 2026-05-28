@@ -1,0 +1,2 @@
+ALTER TABLE public.health_samples DROP CONSTRAINT IF EXISTS health_samples_source_check;
+ALTER TABLE public.health_samples ADD CONSTRAINT health_samples_source_check CHECK (source = ANY (ARRAY['HEALTHKIT'::text, 'HEALTH_CONNECT'::text, 'OURA'::text, 'STRAVA'::text, 'MANUAL'::text]));
