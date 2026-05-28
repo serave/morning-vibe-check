@@ -33,6 +33,7 @@ const ConnectHealth = () => {
   const [syncing, setSyncing] = useState(false);
   const [ouraConnection, setOuraConnection] = useState<any>(null);
   const [ouraLoading, setOuraLoading] = useState(false);
+  const [ouraSyncing, setOuraSyncing] = useState(false);
   const [revokedSteps, setRevokedSteps] = useState<Record<string, boolean>>({});
   const [showRevokeChecklist, setShowRevokeChecklist] = useState(false);
 
@@ -102,6 +103,23 @@ const ConnectHealth = () => {
     } catch (e: any) {
       toast({ title: "Could not start Oura connection", description: e?.message ?? "Unknown error", variant: "destructive" });
       setOuraLoading(false);
+    }
+  };
+
+  const handleSyncOura = async () => {
+    setOuraSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-oura", { body: { days: 14 } });
+      if (error) throw error;
+      toast({
+        title: "Oura synced",
+        description: `${data?.samplesUpserted ?? 0} samples · ${data?.workoutsUpserted ?? 0} workouts${data?.checkinUpdated ? " · today's check-in updated" : ""}`,
+      });
+      await refresh();
+    } catch (e: any) {
+      toast({ title: "Oura sync failed", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setOuraSyncing(false);
     }
   };
 
@@ -193,7 +211,11 @@ const ConnectHealth = () => {
                 </span>
               )}
             </p>
-            <Button variant="ghost" onClick={handleDisconnectOura} className="mt-3 w-full text-destructive hover:text-destructive">
+            <Button onClick={handleSyncOura} disabled={ouraSyncing} variant="secondary" className="mt-3 w-full">
+              <RefreshCw className={ouraSyncing ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"} />
+              {ouraSyncing ? "Syncing…" : "Sync Now"}
+            </Button>
+            <Button variant="ghost" onClick={handleDisconnectOura} className="mt-2 w-full text-destructive hover:text-destructive">
               <Unplug className="mr-2 h-4 w-4" /> Disconnect Oura
             </Button>
           </>
