@@ -86,7 +86,19 @@ const ConnectHealth = () => {
         body: { return_to: window.location.pathname },
       });
       if (error) throw error;
-      if (data?.url) window.location.href = data.url;
+      if (data?.url) {
+        // Break out of preview iframe so Oura's login page can load
+        try {
+          if (window.top && window.top !== window.self) {
+            window.top.location.href = data.url;
+            return;
+          }
+        } catch {
+          window.open(data.url, "_blank", "noopener");
+          return;
+        }
+        window.location.href = data.url;
+      }
     } catch (e: any) {
       toast({ title: "Could not start Oura connection", description: e?.message ?? "Unknown error", variant: "destructive" });
       setOuraLoading(false);
