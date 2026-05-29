@@ -267,6 +267,40 @@ const ConnectHealth = () => {
         )}
       </div>
 
+      {/* Strava — cloud-based, works on web & native */}
+      <div className="mt-4 rounded-lg bg-card p-4">
+        <div className="mb-2 flex items-center gap-2 text-foreground">
+          <Activity className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Strava</span>
+        </div>
+        {stravaConnection ? (
+          <>
+            <p className="text-sm text-foreground">
+              ✅ Connected
+              {stravaConnection.last_synced_at && (
+                <span className="ml-1 text-muted-foreground">
+                  · synced {formatDistanceToNow(new Date(stravaConnection.last_synced_at), { addSuffix: true })}
+                </span>
+              )}
+            </p>
+            <Button variant="ghost" onClick={handleDisconnectStrava} className="mt-3 w-full text-destructive hover:text-destructive">
+              <Unplug className="mr-2 h-4 w-4" /> Disconnect Strava
+            </Button>
+          </>
+        ) : (
+          <>
+            <p className="mb-3 text-sm text-muted-foreground">
+              Imports your activities (workouts, runs, rides) with HR zones and strain.
+            </p>
+            <Button onClick={handleConnectStrava} disabled={stravaLoading} className="w-full">
+              {stravaLoading ? "Redirecting…" : "Connect Strava"}
+            </Button>
+          </>
+        )}
+      </div>
+
+
+
       {!platform && (
         <div className="mt-6 rounded-lg bg-card p-4">
           <div className="mb-2 flex items-center gap-2 text-foreground">
