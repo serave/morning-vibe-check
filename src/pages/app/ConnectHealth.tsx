@@ -34,6 +34,8 @@ const ConnectHealth = () => {
   const [ouraConnection, setOuraConnection] = useState<any>(null);
   const [ouraLoading, setOuraLoading] = useState(false);
   const [ouraSyncing, setOuraSyncing] = useState(false);
+  const [stravaConnection, setStravaConnection] = useState<any>(null);
+  const [stravaLoading, setStravaLoading] = useState(false);
   const [revokedSteps, setRevokedSteps] = useState<Record<string, boolean>>({});
   const [showRevokeChecklist, setShowRevokeChecklist] = useState(false);
 
@@ -51,14 +53,16 @@ const ConnectHealth = () => {
 
   const refresh = async () => {
     if (!user) return;
-    const [conn, t, oura] = await Promise.all([
+    const [conn, t, oura, strava] = await Promise.all([
       getConnection(user.id),
       getTodayHealth(user.id),
       supabase.from("integrations").select("*").eq("user_id", user.id).eq("provider", "oura").maybeSingle(),
+      supabase.from("integrations").select("*").eq("user_id", user.id).eq("provider", "strava").maybeSingle(),
     ]);
     setConnection(conn);
     setToday(t);
     setOuraConnection(oura.data ?? null);
+    setStravaConnection(strava.data ?? null);
   };
 
   useEffect(() => {
@@ -67,15 +71,15 @@ const ConnectHealth = () => {
   }, [user]);
 
   useEffect(() => {
-    const status = searchParams.get("oura");
-    if (!status) return;
-    if (status === "connected") {
-      toast({ title: "Oura connected", description: "Your Oura account is linked." });
-    } else if (status === "error") {
-      const reason = searchParams.get("reason") || "Unknown error";
-      toast({ title: "Oura connection failed", description: reason, variant: "destructive" });
-    }
+    const oura = searchParams.get("oura");
+    const strava = searchParams.get("strava");
+    if (!oura && !strava) return;
+    if (oura === "connected") toast({ title: "Oura connected", description: "Your Oura account is linked." });
+    else if (oura === "error") toast({ title: "Oura connection failed", description: searchParams.get("reason") || "Unknown error", variant: "destructive" });
+    if (strava === "connected") toast({ title: "Strava connected", description: "Your Strava account is linked." });
+    else if (strava === "error") toast({ title: "Strava connection failed", description: searchParams.get("reason") || "Unknown error", variant: "destructive" });
     searchParams.delete("oura");
+    searchParams.delete("strava");
     searchParams.delete("reason");
     setSearchParams(searchParams, { replace: true });
   }, [searchParams]);
@@ -128,6 +132,38 @@ const ConnectHealth = () => {
     await supabase.from("integrations").delete().eq("user_id", user.id).eq("provider", "oura");
     setOuraConnection(null);
     toast({ title: "Oura disconnected" });
+  };
+
+  const handleConnectStrava = async () => {
+    setStravaLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("strava-oauth-start", {
+        body: { return_to: window.location.origin + window.location.pathname },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        try {
+          if (window.top && window.top !== window.self) {
+            window.top.location.href = data.url;
+            return;
+          }
+        } catch {
+          window.open(data.url, "_blank", "noopener");
+          return;
+        }
+        window.location.href = data.url;
+      }
+    } catch (e: any) {
+      toast({ title: "Could not start Strava connection", description: e?.message ?? "Unknown error", variant: "destructive" });
+      setStravaLoading(false);
+    }
+  };
+
+  const handleDisconnectStrava = async () => {
+    if (!user) return;
+    await supabase.from("integrations").delete().eq("user_id", user.id).eq("provider", "strava");
+    setStravaConnection(null);
+    toast({ title: "Strava disconnected" });
   };
 
   const handleConnect = async () => {
