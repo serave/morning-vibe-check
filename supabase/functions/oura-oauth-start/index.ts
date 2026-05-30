@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     }
 
     const nonce = crypto.randomUUID();
-    const payload = `${user.id}.${nonce}.${Date.now()}.${encodeURIComponent(returnTo)}`;
+    const payload = `${user.id}|${nonce}|${Date.now()}|${encodeURIComponent(returnTo)}`;
     const sig = await signState(payload, serviceKey);
     const state = `${btoa(payload).replace(/=+$/, "")}.${sig}`;
 
