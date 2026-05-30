@@ -22,7 +22,7 @@ async function verifyState(state: string, secret: string): Promise<{ userId: str
     const expectedB64 = btoa(String.fromCharCode(...new Uint8Array(expectedSig)))
       .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     if (expectedB64 !== sig) return null;
-    const [userId, _nonce, tsStr, returnToEnc] = payload.split(".");
+    const [userId, _nonce, tsStr, returnToEnc] = payload.split("|");
     if (Date.now() - Number(tsStr) > 10 * 60 * 1000) return null;
     return { userId, returnTo: decodeURIComponent(returnToEnc || "") };
   } catch {
@@ -32,10 +32,10 @@ async function verifyState(state: string, secret: string): Promise<{ userId: str
 
 function htmlRedirect(to: string, msg: string) {
   return new Response(
-    `<!doctype html><meta charset="utf-8"><title>Oura</title>
+    `<!doctype html><html><head><meta charset="utf-8"><title>Oura</title></head><body>
      <script>window.location.replace(${JSON.stringify(to)});</script>
-     <p>${msg} <a href="${to}">Continue</a></p>`,
-    { headers: { "Content-Type": "text/html" } },
+     <p>${msg} <a href="${to}">Continue</a></p></body></html>`,
+    { headers: { "Content-Type": "text/html; charset=utf-8" } },
   );
 }
 
