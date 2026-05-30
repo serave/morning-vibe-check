@@ -31,12 +31,14 @@ async function verifyState(state: string, secret: string): Promise<{ userId: str
 }
 
 function htmlRedirect(to: string, msg: string) {
-  return new Response(
-    `<!doctype html><html><head><meta charset="utf-8"><title>Oura</title></head><body>
-     <script>window.location.replace(${JSON.stringify(to)});</script>
-     <p>${msg} <a href="${to}">Continue</a></p></body></html>`,
-    { headers: { "Content-Type": "text/html; charset=utf-8" } },
-  );
+  return new Response(msg, {
+    status: 302,
+    headers: {
+      Location: to,
+      "Cache-Control": "no-store",
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  });
 }
 
 const DEFAULT_RETURN_TO = "https://morning-vibe-check.lovable.app/app/connect-health";
