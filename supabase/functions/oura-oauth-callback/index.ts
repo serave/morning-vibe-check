@@ -39,6 +39,24 @@ function htmlRedirect(to: string, msg: string) {
   );
 }
 
+const DEFAULT_RETURN_TO = "https://morning-vibe-check.lovable.app/app/connect-health";
+
+function safeReturnTo(returnTo?: string | null) {
+  if (!returnTo) return DEFAULT_RETURN_TO;
+  try {
+    const url = new URL(returnTo);
+    if (url.protocol === "https:" || url.protocol === "http:") return url.toString();
+  } catch { /* ignore */ }
+  return DEFAULT_RETURN_TO;
+}
+
+function statusUrl(returnTo: string | null | undefined, status: "connected" | "error", reason?: string) {
+  const url = new URL(safeReturnTo(returnTo));
+  url.searchParams.set("oura", status);
+  if (reason) url.searchParams.set("reason", reason);
+  return url.toString();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -47,13 +65,13 @@ Deno.serve(async (req) => {
   const state = url.searchParams.get("state");
   const error = url.searchParams.get("error");
 
-  const fallback = "/app/connect-health?oura=error";
-  if (error) return htmlRedirect(fallback + "&reason=" + encodeURIComponent(error), "Authorization denied.");
-  if (!code || !state) return htmlRedirect(fallback, "Missing code or state.");
-
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const verified = await verifyState(state, serviceKey);
-  if (!verified) return htmlRedirect(fallback + "&reason=bad_state", "Invalid state.");
+  const verified = state ? await verifyState(state, serviceKey) : null;
+  if (error) return htmlRedirect(statusUrl(verified?.returnTo, "error", error), "Authorization denied.");
+  if (!code || !state) return htmlRedirect(statusUrl(null, "error", "missing_code_or_state"), "Missing code or state.");
+  if (!verified) return htmlRedirect(statusUrl(null, "error", "bad_state"), "Invalid state.");
+
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, serviceKey);
 
   const clientId = Deno.env.get("OURA_CLIENT_ID")!;
   const clientSecret = Deno.env.get("OURA_CLIENT_SECRET")!;
@@ -75,7 +93,16 @@ Deno.serve(async (req) => {
   if (!tokenRes.ok) {
     const txt = await tokenRes.text();
     console.error("Oura token exchange failed:", tokenRes.status, txt);
-    return htmlRedirect(fallback + "&reason=token_exchange", "Token exchange failed.");
+    const { data: existing } = await admin
+      .from("integrations")
+      .select("id")
+      .eq("user_id", verified.userId)
+      .eq("provider", "oura")
+      .maybeSingle();
+    return htmlRedirect(
+      existing ? statusUrl(verified.returnTo, "connected") : statusUrl(verified.returnTo, "error", "token_exchange"),
+      existing ? "Oura connected. Redirecting…" : "Token exchange failed.",
+    );
   }
   const tokens = await tokenRes.json();
 
@@ -83,7 +110,6 @@ Deno.serve(async (req) => {
     ? new Date(Date.now() + Number(tokens.expires_in) * 1000).toISOString()
     : null;
 
-  const admin = createClient(Deno.env.get("SUPABASE_URL")!, serviceKey);
   const { error: upsertErr } = await admin
     .from("integrations")
     .upsert({
@@ -99,11 +125,8 @@ Deno.serve(async (req) => {
 
   if (upsertErr) {
     console.error("Upsert failed:", upsertErr);
-    return htmlRedirect(fallback + "&reason=db", "Could not save tokens.");
+    return htmlRedirect(statusUrl(verified.returnTo, "error", "db"), "Could not save tokens.");
   }
 
-  const base = verified.returnTo || "https://morning-vibe-check.lovable.app/app/connect-health";
-  const sep = base.includes("?") ? "&" : "?";
-  const dest = `${base}${sep}oura=connected`;
-  return htmlRedirect(dest, "Oura connected. Redirecting…");
+  return htmlRedirect(statusUrl(verified.returnTo, "connected"), "Oura connected. Redirecting…");
 });
