@@ -31,12 +31,32 @@ async function verifyState(state: string, secret: string): Promise<{ userId: str
 }
 
 function htmlRedirect(to: string, msg: string) {
-  return new Response(
-    `<!doctype html><html><head><meta charset="utf-8"><title>Strava</title></head><body>
-     <script>window.location.replace(${JSON.stringify(to)});</script>
-     <p>${msg} <a href="${to}">Continue</a></p></body></html>`,
-    { headers: { "Content-Type": "text/html; charset=utf-8" } },
-  );
+  return new Response(msg, {
+    status: 302,
+    headers: {
+      Location: to,
+      "Cache-Control": "no-store",
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  });
+}
+
+const DEFAULT_RETURN_TO = "https://morning-vibe-check.lovable.app/app/connect-health";
+
+function safeReturnTo(returnTo?: string | null) {
+  if (!returnTo) return DEFAULT_RETURN_TO;
+  try {
+    const url = new URL(returnTo);
+    if (url.protocol === "https:" || url.protocol === "http:") return url.toString();
+  } catch { /* ignore */ }
+  return DEFAULT_RETURN_TO;
+}
+
+function statusUrl(returnTo: string | null | undefined, status: "connected" | "error", reason?: string) {
+  const url = new URL(safeReturnTo(returnTo));
+  url.searchParams.set("strava", status);
+  if (reason) url.searchParams.set("reason", reason);
+  return url.toString();
 }
 
 Deno.serve(async (req) => {
@@ -48,13 +68,13 @@ Deno.serve(async (req) => {
   const error = url.searchParams.get("error");
   const scope = url.searchParams.get("scope") || null;
 
-  const fallback = "/app/connect-health?strava=error";
-  if (error) return htmlRedirect(fallback + "&reason=" + encodeURIComponent(error), "Authorization denied.");
-  if (!code || !state) return htmlRedirect(fallback, "Missing code or state.");
-
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const verified = await verifyState(state, serviceKey);
-  if (!verified) return htmlRedirect(fallback + "&reason=bad_state", "Invalid state.");
+  const verified = state ? await verifyState(state, serviceKey) : null;
+  if (error) return htmlRedirect(statusUrl(verified?.returnTo, "error", error), "Authorization denied.");
+  if (!code || !state) return htmlRedirect(statusUrl(null, "error", "missing_code_or_state"), "Missing code or state.");
+  if (!verified) return htmlRedirect(statusUrl(null, "error", "bad_state"), "Invalid state.");
+
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, serviceKey);
 
   const clientId = Deno.env.get("STRAVA_CLIENT_ID")!;
   const clientSecret = Deno.env.get("STRAVA_CLIENT_SECRET")!;
@@ -73,7 +93,16 @@ Deno.serve(async (req) => {
   if (!tokenRes.ok) {
     const txt = await tokenRes.text();
     console.error("Strava token exchange failed:", tokenRes.status, txt);
-    return htmlRedirect(fallback + "&reason=token_exchange", "Token exchange failed.");
+    const { data: existing } = await admin
+      .from("integrations")
+      .select("id")
+      .eq("user_id", verified.userId)
+      .eq("provider", "strava")
+      .maybeSingle();
+    return htmlRedirect(
+      existing ? statusUrl(verified.returnTo, "connected") : statusUrl(verified.returnTo, "error", "token_exchange"),
+      existing ? "Strava connected. Redirecting…" : "Token exchange failed.",
+    );
   }
   const tokens = await tokenRes.json();
 
@@ -82,7 +111,6 @@ Deno.serve(async (req) => {
     : null;
   const athleteId = tokens.athlete?.id ? String(tokens.athlete.id) : null;
 
-  const admin = createClient(Deno.env.get("SUPABASE_URL")!, serviceKey);
   const { error: upsertErr } = await admin
     .from("integrations")
     .upsert({
@@ -99,11 +127,8 @@ Deno.serve(async (req) => {
 
   if (upsertErr) {
     console.error("Upsert failed:", upsertErr);
-    return htmlRedirect(fallback + "&reason=db", "Could not save tokens.");
+    return htmlRedirect(statusUrl(verified.returnTo, "error", "db"), "Could not save tokens.");
   }
 
-  const base = verified.returnTo || "https://morning-vibe-check.lovable.app/app/connect-health";
-  const sep = base.includes("?") ? "&" : "?";
-  const dest = `${base}${sep}strava=connected`;
-  return htmlRedirect(dest, "Strava connected. Redirecting…");
+  return htmlRedirect(statusUrl(verified.returnTo, "connected"), "Strava connected. Redirecting…");
 });
