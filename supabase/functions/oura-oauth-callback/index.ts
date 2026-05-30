@@ -22,7 +22,7 @@ async function verifyState(state: string, secret: string): Promise<{ userId: str
     const expectedB64 = btoa(String.fromCharCode(...new Uint8Array(expectedSig)))
       .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     if (expectedB64 !== sig) return null;
-    const [userId, _nonce, tsStr, returnToEnc] = payload.split(".");
+    const [userId, _nonce, tsStr, returnToEnc] = payload.split("|");
     if (Date.now() - Number(tsStr) > 10 * 60 * 1000) return null;
     return { userId, returnTo: decodeURIComponent(returnToEnc || "") };
   } catch {
